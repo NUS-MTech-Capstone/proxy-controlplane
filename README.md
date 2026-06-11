@@ -8,6 +8,11 @@ The Proxy Control Plane validates incoming requests with the Security Token Serv
 creates sessions in the Session Manager, 
 and returns the WebSocket URL for the Proxy Data Plane to connect to.
 
+Session endpoints expect AWS ALB Cognito authentication. The ALB validates the
+token and forwards the claims JWT in `x-amzn-oidc-data`. The control plane parses
+the `sub` claim as `userId`; clients must not send `userId` in the request body.
+`GET /healthz` remains unauthenticated.
+
 ## Run
 
 ```bash
@@ -26,3 +31,17 @@ POST /sessions/{sessionId}/rejoin
 POST /sessions/{sessionId}/observe
 ```
 
+Start request body:
+
+```json
+{
+  "hostId": "host-123",
+  "crId": "cr-123"
+}
+```
+
+Rejoin and observe requests use an empty JSON object:
+
+```json
+{}
+```

@@ -13,8 +13,14 @@ func (s *Server) start(w http.ResponseWriter, r *http.Request) {
 	if !decode(w, r, &req) {
 		return
 	}
-	if req.UserID == "" || req.HostID == "" || req.CRID == "" {
-		writeError(w, http.StatusBadRequest, "userId, hostId and crId are required")
+	user, ok := cognitoUserFromContext(r.Context())
+	if !ok {
+		writeError(w, http.StatusUnauthorized, "missing Cognito identity")
+		return
+	}
+	req.UserID = user.Subject
+	if req.HostID == "" || req.CRID == "" {
+		writeError(w, http.StatusBadRequest, "hostId and crId are required")
 		return
 	}
 	resp, err := s.svc.StartSession(r.Context(), req)
@@ -32,10 +38,12 @@ func (s *Server) sessionAction(w http.ResponseWriter, r *http.Request) {
 	if !decode(w, r, &req) {
 		return
 	}
-	if req.UserID == "" {
-		writeError(w, http.StatusBadRequest, "userId is required")
+	user, ok := cognitoUserFromContext(r.Context())
+	if !ok {
+		writeError(w, http.StatusUnauthorized, "missing Cognito identity")
 		return
 	}
+	req.UserID = user.Subject
 	var (
 		resp model.SessionResponse
 		err  error

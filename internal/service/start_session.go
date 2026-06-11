@@ -20,5 +20,6 @@ func (s *Service) StartSession(ctx context.Context, req model.StartSessionReques
 	if err != nil {
 		return model.SessionResponse{}, err
 	}
+
 	return model.SessionResponse{SessionID: session.SessionID, SessionToken: token.SessionToken, WebsocketURL: session.WebsocketURL, ExpiresAt: token.ExpiresAt}, nil
 }

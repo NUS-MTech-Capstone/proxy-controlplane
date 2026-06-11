@@ -3,13 +3,13 @@ package model
 import "time"
 
 type StartSessionRequest struct {
-	UserID string `json:"userId"`
+	UserID string `json:"-"`
 	HostID string `json:"hostId"`
 	CRID   string `json:"crId"`
 }
 
 type SessionAccessRequest struct {
-	UserID string `json:"userId"`
+	UserID string `json:"-"`
 }
 
 type SessionResponse struct {

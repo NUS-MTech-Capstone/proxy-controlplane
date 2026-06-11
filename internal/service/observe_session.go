@@ -8,16 +8,25 @@ import (
 )
 
 func (s *Service) ObserveSession(ctx context.Context, sessionID string, req model.SessionAccessRequest) (model.SessionResponse, error) {
-	if err := s.sts.Validate(ctx, sts.ValidateRequest{UserID: req.UserID, SessionID: sessionID, Action: "observe"}); err != nil {
+	if err := s.sts.Validate(ctx,
+		sts.ValidateRequest{UserID: req.UserID, SessionID: sessionID, Action: "observe"}); err != nil {
 		return model.SessionResponse{}, err
 	}
 	session, err := s.sm.GetSession(ctx, sessionID)
 	if err != nil {
 		return model.SessionResponse{}, err
 	}
-	token, err := s.sts.RequestToken(ctx, sts.TokenRequest{SessionID: session.SessionID, UserID: req.UserID, Mode: "observer"})
+
+	token, err := s.sts.RequestToken(ctx,
+		sts.TokenRequest{SessionID: session.SessionID, UserID: req.UserID, Mode: "observer"})
 	if err != nil {
 		return model.SessionResponse{}, err
 	}
-	return model.SessionResponse{SessionID: session.SessionID, SessionToken: token.SessionToken, WebsocketURL: session.WebsocketURL + "?mode=observe", ExpiresAt: token.ExpiresAt}, nil
+
+	return model.SessionResponse{
+		SessionID:    session.SessionID,
+		SessionToken: token.SessionToken,
+		WebsocketURL: session.WebsocketURL + "?mode=observe",
+		ExpiresAt:    token.ExpiresAt,
+	}, nil
 }

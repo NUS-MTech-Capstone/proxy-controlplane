@@ -15,9 +15,11 @@ func (s *Service) RejoinSession(ctx context.Context, sessionID string, req model
 	if err != nil {
 		return model.SessionResponse{}, err
 	}
+
 	token, err := s.sts.RequestToken(ctx, sts.TokenRequest{SessionID: session.SessionID, UserID: req.UserID, Mode: "owner"})
 	if err != nil {
 		return model.SessionResponse{}, err
 	}
+
 	return model.SessionResponse{SessionID: session.SessionID, SessionToken: token.SessionToken, WebsocketURL: session.WebsocketURL, ExpiresAt: token.ExpiresAt}, nil
 }
