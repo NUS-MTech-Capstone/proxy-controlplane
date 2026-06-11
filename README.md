@@ -1,7 +1,12 @@
-# proxy-controlplane
 # Proxy Control Plane
 
-Public control API for starting, rejoining, and observing MVP sessions.
+Public control API for starting, rejoining, and observing sessions.
+
+## Overview
+
+The Proxy Control Plane validates incoming requests with the Security Token Service (STS), 
+creates sessions in the Session Manager, 
+and returns the WebSocket URL for the Proxy Data Plane to connect to.
 
 ## Run
 
@@ -21,5 +26,3 @@ POST /sessions/{sessionId}/rejoin
 POST /sessions/{sessionId}/observe
 ```
 
-`/sessions/start` validates with STS, creates a session in Session Manager, asks
-STS for a session token, then returns the direct Proxy Dataplane WebSocket URL.
