@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"errors"
 
 	"github.com/NUS-MTech-Capstone/proxy-controlplane/internal/model"
 	"github.com/NUS-MTech-Capstone/proxy-controlplane/internal/sts"
@@ -14,6 +15,12 @@ func (s *Service) RejoinSession(ctx context.Context, sessionID string, req model
 	session, err := s.sm.GetSession(ctx, sessionID)
 	if err != nil {
 		return model.SessionResponse{}, err
+	}
+	if session.Status != "ACTIVE" {
+		return model.SessionResponse{}, errors.New("session is not active")
+	}
+	if session.UserID != req.UserID {
+		return model.SessionResponse{}, errors.New("authenticated user does not own the session")
 	}
 
 	token, err := s.sts.RequestToken(ctx, sts.TokenRequest{SessionID: session.SessionID, UserID: req.UserID, Mode: "owner"})

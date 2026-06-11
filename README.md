@@ -45,3 +45,7 @@ Rejoin and observe requests use an empty JSON object:
 ```json
 {}
 ```
+
+Rejoin is limited to the original session owner. Observe returns an observer
+token and a WebSocket URL with `mode=observe`; the dataplane enforces read-only
+behavior for that connection.
