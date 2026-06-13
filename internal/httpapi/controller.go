@@ -23,6 +23,13 @@ func (s *Server) start(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadRequest, "hostId and crId are required")
 		return
 	}
+	if req.ConnectionType == "" {
+		req.ConnectionType = "ssh"
+	}
+	if req.ConnectionType != "ssh" {
+		writeError(w, http.StatusBadRequest, "only ssh connectionType is supported")
+		return
+	}
 	resp, err := s.svc.StartSession(r.Context(), req)
 	if err != nil {
 		writeError(w, http.StatusBadGateway, err.Error())

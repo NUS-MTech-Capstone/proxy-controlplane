@@ -11,9 +11,10 @@ import (
 )
 
 type CreateSessionRequest struct {
-	UserID string `json:"userId"`
-	HostID string `json:"hostId"`
-	CRID   string `json:"crId"`
+	UserID         string `json:"userId"`
+	HostID         string `json:"hostId"`
+	CRID           string `json:"crId"`
+	ConnectionType string `json:"connectionType"`
 }
 
 func (c *SessionManagerClient) CreateSession(ctx context.Context, req CreateSessionRequest) (model.Session, error) {

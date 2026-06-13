@@ -36,9 +36,13 @@ Start request body:
 ```json
 {
   "hostId": "host-123",
-  "crId": "cr-123"
+  "crId": "cr-123",
+  "connectionType": "ssh"
 }
 ```
+
+`connectionType` defaults to `ssh`. `agent` is reserved but rejected until the
+streaming DDM Agent transport is implemented.
 
 Rejoin and observe requests use an empty JSON object:
 
@@ -47,5 +51,5 @@ Rejoin and observe requests use an empty JSON object:
 ```
 
 Rejoin is limited to the original session owner. Observe returns an observer
-token and a WebSocket URL with `mode=observe`; the dataplane enforces read-only
-behavior for that connection.
+token; the signed token, rather than a URL parameter, makes the dataplane
+connection read-only.

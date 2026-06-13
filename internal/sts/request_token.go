@@ -10,9 +10,13 @@ import (
 )
 
 type TokenRequest struct {
-	SessionID string `json:"sessionId"`
-	UserID    string `json:"userId"`
-	Mode      string `json:"mode"`
+	SessionID      string `json:"sessionId"`
+	UserID         string `json:"userId"`
+	HostID         string `json:"hostId"`
+	CRID           string `json:"crId"`
+	ConnectionType string `json:"connectionType"`
+	Action         string `json:"action"`
+	Mode           string `json:"mode"`
 }
 
 type TokenResponse struct {

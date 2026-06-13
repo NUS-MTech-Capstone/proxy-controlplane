@@ -23,7 +23,10 @@ func (s *Service) RejoinSession(ctx context.Context, sessionID string, req model
 		return model.SessionResponse{}, errors.New("authenticated user does not own the session")
 	}
 
-	token, err := s.sts.RequestToken(ctx, sts.TokenRequest{SessionID: session.SessionID, UserID: req.UserID, Mode: "owner"})
+	token, err := s.sts.RequestToken(ctx, sts.TokenRequest{
+		SessionID: session.SessionID, UserID: req.UserID, HostID: session.HostID, CRID: session.CRID,
+		ConnectionType: session.ConnectionType, Action: "rejoin", Mode: "owner",
+	})
 	if err != nil {
 		return model.SessionResponse{}, err
 	}

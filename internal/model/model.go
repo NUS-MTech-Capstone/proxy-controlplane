@@ -3,9 +3,10 @@ package model
 import "time"
 
 type StartSessionRequest struct {
-	UserID string `json:"-"`
-	HostID string `json:"hostId"`
-	CRID   string `json:"crId"`
+	UserID         string `json:"-"`
+	HostID         string `json:"hostId"`
+	CRID           string `json:"crId"`
+	ConnectionType string `json:"connectionType,omitempty"`
 }
 
 type SessionAccessRequest struct {
@@ -20,10 +21,11 @@ type SessionResponse struct {
 }
 
 type Session struct {
-	SessionID    string `json:"sessionId"`
-	UserID       string `json:"userId"`
-	HostID       string `json:"hostId"`
-	CRID         string `json:"crId"`
-	WebsocketURL string `json:"websocketUrl"`
-	Status       string `json:"status"`
+	SessionID      string `json:"sessionId"`
+	UserID         string `json:"userId"`
+	HostID         string `json:"hostId"`
+	CRID           string `json:"crId"`
+	ConnectionType string `json:"connectionType"`
+	WebsocketURL   string `json:"websocketUrl"`
+	Status         string `json:"status"`
 }
