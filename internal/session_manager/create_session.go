@@ -23,6 +23,33 @@ func (c *SessionManagerClient) CreateSession(ctx context.Context, req CreateSess
 	return resp, err
 }
 
+func (c *SessionManagerClient) CreateAutomationRun(ctx context.Context, incidentID, hostID string) (model.AutomationRun, error) {
+	var resp model.AutomationRun
+	err := c.post(ctx, "/automation/runs", map[string]string{"incidentId": incidentID, "hostId": hostID}, &resp)
+	return resp, err
+}
+
+func (c *SessionManagerClient) GetAutomationRun(ctx context.Context, runID string) (model.AutomationRun, error) {
+	var resp model.AutomationRun
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.baseURL+"/automation/runs/"+runID, nil)
+	if err != nil {
+		return resp, err
+	}
+	httpResp, err := c.client.Do(req)
+	if err != nil {
+		return resp, err
+	}
+	defer httpResp.Body.Close()
+	if httpResp.StatusCode < 200 || httpResp.StatusCode >= 300 {
+		return resp, fmt.Errorf("session-manager returned status %d", httpResp.StatusCode)
+	}
+	return resp, json.NewDecoder(httpResp.Body).Decode(&resp)
+}
+
+func (c *SessionManagerClient) CloseAutomationRun(ctx context.Context, runID string) error {
+	return c.post(ctx, "/automation/runs/"+runID+"/close", map[string]string{}, nil)
+}
+
 func (c *SessionManagerClient) post(ctx context.Context, path string, req any, resp any) error {
 	body, err := json.Marshal(req)
 	if err != nil {

@@ -29,7 +29,14 @@ GET  /healthz
 POST /sessions/start
 POST /sessions/{sessionId}/rejoin
 POST /sessions/{sessionId}/observe
+POST /automation/runs/start
+POST /automation/runs/{runId}/token
+POST /automation/runs/{runId}/close
 ```
+
+The automation endpoints are internal workload APIs. Start and token requests
+forward a projected Kubernetes service-account bearer token to STS. They do not
+derive or accept a human `userId`, and they never carry terminal traffic.
 
 Start request body:
 
