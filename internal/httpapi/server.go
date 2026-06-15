@@ -8,12 +8,17 @@ import (
 )
 
 type Server struct {
-	svc *service.Service
-	mux *http.ServeMux
+	svc              *service.Service
+	mux              *http.ServeMux
+	identityVerifier IdentityVerifier
 }
 
-func New(svc *service.Service) *Server {
-	s := &Server{svc: svc, mux: http.NewServeMux()}
+func New(svc *service.Service, identityVerifier IdentityVerifier) *Server {
+	s := &Server{
+		svc:              svc,
+		mux:              http.NewServeMux(),
+		identityVerifier: identityVerifier,
+	}
 	s.routes()
 	return s
 }

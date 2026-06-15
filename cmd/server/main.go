@@ -14,7 +14,16 @@ import (
 func main() {
 	cfg := config.Load()
 	svc := service.New(sts.NewSTS(cfg.STSURL), session_manager.NewSessionManager(cfg.SessionManagerURL))
+	identityVerifier, err := httpapi.NewALBJWTVerifier(httpapi.ALBJWTVerifierConfig{
+		Region:   cfg.AWSRegion,
+		ALBARN:   cfg.ALBARN,
+		Issuer:   cfg.CognitoIssuer,
+		ClientID: cfg.CognitoClientID,
+	})
+	if err != nil {
+		log.Fatal(err)
+	}
 	addr := ":" + cfg.Port
 	log.Printf("proxy-controlplane listening on %s", addr)
-	log.Fatal(http.ListenAndServe(addr, httpapi.New(svc)))
+	log.Fatal(http.ListenAndServe(addr, httpapi.New(svc, identityVerifier)))
 }

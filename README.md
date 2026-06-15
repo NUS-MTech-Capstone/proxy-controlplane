@@ -8,10 +8,14 @@ The Proxy Control Plane validates incoming requests with the Security Token Serv
 creates sessions in the Session Manager, 
 and returns the WebSocket URL for the Proxy Data Plane to connect to.
 
-Session endpoints expect AWS ALB Cognito authentication. The ALB validates the
-token and forwards the claims JWT in `x-amzn-oidc-data`. The control plane parses
-the `sub` claim as `userId`; clients must not send `userId` in the request body.
-`GET /healthz` remains unauthenticated.
+Session endpoints expect AWS ALB Cognito authentication. The control plane
+cryptographically verifies the ES256 `x-amzn-oidc-data` JWT against the AWS
+regional ALB public key endpoint. It rejects an unexpected signer ALB ARN,
+issuer, client ID, algorithm, key ID, signature, expiry, or a mismatch between
+the signed `sub` and `x-amzn-oidc-identity`.
+
+The verified `sub` becomes `userId`; clients must not send `userId` in the
+request body. `GET /healthz` remains unauthenticated.
 
 ## Run
 
@@ -19,8 +23,16 @@ the `sub` claim as `userId`; clients must not send `userId` in the request body.
 PORT=8080 \
 STS_URL=http://localhost:8082 \
 SESSION_MANAGER_URL=http://localhost:8081 \
+AWS_REGION=ap-southeast-1 \
+ALB_ARN=arn:aws:elasticloadbalancing:ap-southeast-1:123456789012:loadbalancer/app/example/id \
+COGNITO_USER_POOL_ID=ap-southeast-1_XXXXXXXXX \
+COGNITO_CLIENT_ID=xxxxxxxxxxxxxxxxxxxxxxxxxx \
 go run ./cmd/server
 ```
+
+`COGNITO_ISSUER` may be set directly. Otherwise it is derived from
+`AWS_REGION` and `COGNITO_USER_POOL_ID`. Production startup fails when verifier
+configuration is incomplete.
 
 ## Endpoints
 
