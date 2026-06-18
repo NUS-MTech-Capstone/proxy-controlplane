@@ -1,9 +1,9 @@
 package httpapi
 
 import (
-	"log"
 	"net/http"
 
+	"github.com/NUS-MTech-Capstone/proxy-controlplane/internal/observability"
 	"github.com/NUS-MTech-Capstone/proxy-controlplane/internal/service"
 )
 
@@ -24,6 +24,5 @@ func New(svc *service.Service, identityVerifier IdentityVerifier) *Server {
 }
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	log.Printf("%s %s", r.Method, r.URL.Path)
-	s.mux.ServeHTTP(w, r)
+	observability.RequestIDMiddleware(observability.LogRequests(s.mux)).ServeHTTP(w, r)
 }

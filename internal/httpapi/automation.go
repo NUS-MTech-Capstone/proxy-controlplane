@@ -1,11 +1,12 @@
 package httpapi
 
 import (
-	"log"
+	"log/slog"
 	"net/http"
 	"strings"
 
 	"github.com/NUS-MTech-Capstone/proxy-controlplane/internal/model"
+	"github.com/NUS-MTech-Capstone/proxy-controlplane/internal/observability"
 )
 
 func (s *Server) startAutomationRun(w http.ResponseWriter, r *http.Request) {
@@ -24,7 +25,13 @@ func (s *Server) startAutomationRun(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadGateway, err.Error())
 		return
 	}
-	log.Printf("AutomationRunStarted runId=%s incidentId=%s hostId=%s", resp.RunID, resp.IncidentID, resp.HostID)
+	slog.InfoContext(r.Context(), "AutomationRunStarted",
+		"requestId", observability.RequestID(r.Context()),
+		"runId", resp.RunID,
+		"incidentId", resp.IncidentID,
+		"hostId", resp.HostID,
+		"action", "start",
+	)
 	writeJSON(w, http.StatusCreated, resp)
 }
 

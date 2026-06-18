@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"net/http"
 	"time"
+
+	"github.com/NUS-MTech-Capstone/proxy-controlplane/internal/observability"
 )
 
 type TokenRequest struct {
@@ -76,6 +78,7 @@ func (c *Client) RequestAutomationToken(ctx context.Context, workloadToken strin
 	}
 	httpReq.Header.Set("Content-Type", "application/json")
 	httpReq.Header.Set("Authorization", "Bearer "+workloadToken)
+	observability.SetRequestHeaders(ctx, httpReq)
 	httpResp, err := c.client.Do(httpReq)
 	if err != nil {
 		return resp, err
@@ -97,6 +100,7 @@ func (c *Client) post(ctx context.Context, path string, req any, resp any) error
 		return err
 	}
 	httpReq.Header.Set("Content-Type", "application/json")
+	observability.SetRequestHeaders(ctx, httpReq)
 	httpResp, err := c.client.Do(httpReq)
 	if err != nil {
 		return err

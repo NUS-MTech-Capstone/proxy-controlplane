@@ -1,11 +1,12 @@
 package httpapi
 
 import (
-	"log"
+	"log/slog"
 	"net/http"
 	"strings"
 
 	"github.com/NUS-MTech-Capstone/proxy-controlplane/internal/model"
+	"github.com/NUS-MTech-Capstone/proxy-controlplane/internal/observability"
 )
 
 func (s *Server) start(w http.ResponseWriter, r *http.Request) {
@@ -35,7 +36,15 @@ func (s *Server) start(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadGateway, err.Error())
 		return
 	}
-	log.Printf("SessionStarted sessionId=%s userId=%s hostId=%s", resp.SessionID, req.UserID, req.HostID)
+	slog.InfoContext(r.Context(), "SessionStarted",
+		"requestId", observability.RequestID(r.Context()),
+		"sessionId", resp.SessionID,
+		"userId", req.UserID,
+		"hostId", req.HostID,
+		"crId", req.CRID,
+		"action", "start",
+		"mode", "owner",
+	)
 	writeJSON(w, http.StatusCreated, resp)
 }
 
@@ -68,7 +77,12 @@ func (s *Server) sessionAction(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusBadGateway, err.Error())
 		return
 	}
-	log.Printf("SessionAccess action=%s sessionId=%s userId=%s", action, sessionID, req.UserID)
+	slog.InfoContext(r.Context(), "SessionAccess",
+		"requestId", observability.RequestID(r.Context()),
+		"sessionId", sessionID,
+		"userId", req.UserID,
+		"action", action,
+	)
 	writeJSON(w, http.StatusOK, resp)
 }
 

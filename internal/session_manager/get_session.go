@@ -7,6 +7,7 @@ import (
 	"net/http"
 
 	"github.com/NUS-MTech-Capstone/proxy-controlplane/internal/model"
+	"github.com/NUS-MTech-Capstone/proxy-controlplane/internal/observability"
 )
 
 func (c *SessionManagerClient) GetSession(ctx context.Context, sessionID string) (model.Session, error) {
@@ -14,6 +15,7 @@ func (c *SessionManagerClient) GetSession(ctx context.Context, sessionID string)
 	if err != nil {
 		return model.Session{}, err
 	}
+	observability.SetRequestHeaders(ctx, httpReq)
 	httpResp, err := c.client.Do(httpReq)
 	if err != nil {
 		return model.Session{}, err

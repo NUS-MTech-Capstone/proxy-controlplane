@@ -8,6 +8,7 @@ import (
 	"net/http"
 
 	"github.com/NUS-MTech-Capstone/proxy-controlplane/internal/model"
+	"github.com/NUS-MTech-Capstone/proxy-controlplane/internal/observability"
 )
 
 type CreateSessionRequest struct {
@@ -35,6 +36,7 @@ func (c *SessionManagerClient) GetAutomationRun(ctx context.Context, runID strin
 	if err != nil {
 		return resp, err
 	}
+	observability.SetRequestHeaders(ctx, req)
 	httpResp, err := c.client.Do(req)
 	if err != nil {
 		return resp, err
@@ -60,6 +62,7 @@ func (c *SessionManagerClient) post(ctx context.Context, path string, req any, r
 		return err
 	}
 	httpReq.Header.Set("Content-Type", "application/json")
+	observability.SetRequestHeaders(ctx, httpReq)
 	httpResp, err := c.client.Do(httpReq)
 	if err != nil {
 		return err
