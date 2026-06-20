@@ -4,6 +4,7 @@ import (
 	"log/slog"
 	"net/http"
 	"os"
+	"time"
 
 	"github.com/NUS-MTech-Capstone/proxy-controlplane/internal/config"
 	"github.com/NUS-MTech-Capstone/proxy-controlplane/internal/httpapi"
@@ -29,7 +30,15 @@ func main() {
 	}
 	addr := ":" + cfg.Port
 	slog.Info("server_listening", "addr", addr)
-	if err := http.ListenAndServe(addr, httpapi.New(svc, identityVerifier)); err != nil {
+	server := &http.Server{
+		Addr:              addr,
+		Handler:           httpapi.New(svc, identityVerifier),
+		ReadHeaderTimeout: 5 * time.Second,
+		ReadTimeout:       15 * time.Second,
+		WriteTimeout:      30 * time.Second,
+		IdleTimeout:       60 * time.Second,
+	}
+	if err := server.ListenAndServe(); err != nil {
 		slog.Error("server failed", "error", err)
 		os.Exit(1)
 	}

@@ -13,6 +13,7 @@ import (
 	"io"
 	"math/big"
 	"net/http"
+	"net/url"
 	"strings"
 	"sync"
 	"time"
@@ -123,6 +124,9 @@ func (v *ALBJWTVerifier) Verify(ctx context.Context, token string) (map[string]a
 }
 
 func (v *ALBJWTVerifier) publicKey(ctx context.Context, keyID string) (*ecdsa.PublicKey, error) {
+	if !validALBKeyID(keyID) {
+		return nil, errors.New("invalid ALB public key id")
+	}
 	v.mu.RLock()
 	key := v.keys[keyID]
 	v.mu.RUnlock()
@@ -130,11 +134,15 @@ func (v *ALBJWTVerifier) publicKey(ctx context.Context, keyID string) (*ecdsa.Pu
 		return key, nil
 	}
 
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, v.publicKeyBaseURL+"/"+keyID, nil)
+	keyURL, err := url.JoinPath(v.publicKeyBaseURL, keyID)
+	if err != nil {
+		return nil, fmt.Errorf("create ALB public key URL: %w", err)
+	}
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, keyURL, nil) // #nosec G704 -- base URL is trusted config and keyID is path-segment validated.
 	if err != nil {
 		return nil, fmt.Errorf("create ALB public key request: %w", err)
 	}
-	resp, err := v.httpClient.Do(req)
+	resp, err := v.httpClient.Do(req) // #nosec G704 -- request URL is built from trusted config and a validated keyID path segment.
 	if err != nil {
 		return nil, fmt.Errorf("fetch ALB public key: %w", err)
 	}
@@ -162,6 +170,19 @@ func (v *ALBJWTVerifier) publicKey(ctx context.Context, keyID string) (*ecdsa.Pu
 	v.keys[keyID] = publicKey
 	v.mu.Unlock()
 	return publicKey, nil
+}
+
+func validALBKeyID(keyID string) bool {
+	if keyID == "" || len(keyID) > 256 {
+		return false
+	}
+	for _, r := range keyID {
+		if r >= 'a' && r <= 'z' || r >= 'A' && r <= 'Z' || r >= '0' && r <= '9' || r == '-' || r == '_' {
+			continue
+		}
+		return false
+	}
+	return true
 }
 
 func cognitoMiddleware(verifier IdentityVerifier, next http.Handler) http.Handler {
