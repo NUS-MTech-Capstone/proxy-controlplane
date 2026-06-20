@@ -81,3 +81,12 @@ STS, and returns active sessions owned by that user for the requested server and
 change request. The response intentionally excludes session tokens, WebSocket
 URLs, and dataplane ownership fields. Use the selected `sessionId` with
 `POST /sessions/{sessionId}/rejoin` to receive a fresh scoped session token.
+
+## API Specification
+
+The OpenAPI contract is checked in at `api/openapi.yaml` and is served
+unauthenticated at:
+
+```http
+GET /openapi.yaml
+```

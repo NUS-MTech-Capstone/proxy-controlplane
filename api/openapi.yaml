@@ -1,0 +1,333 @@
+openapi: 3.1.0
+info:
+  title: DenDenMushi Proxy Control Plane API
+  version: 0.1.0
+  description: Public control API for starting, rejoining, and observing assigned SSH sessions.
+servers:
+  - url: http://localhost:8081
+paths:
+  /healthz:
+    get:
+      summary: Liveness probe
+      responses:
+        "200":
+          $ref: "#/components/responses/Health"
+  /sessions/start:
+    post:
+      summary: Start an SSH session
+      security:
+        - albCognito: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StartSessionRequest"
+      responses:
+        "201":
+          description: Session created and token issued.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionResponse"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+        "502":
+          $ref: "#/components/responses/Error"
+  /sessions/rejoin-candidates:
+    get:
+      summary: List active sessions the authenticated user can rejoin
+      security:
+        - albCognito: []
+      parameters:
+        - $ref: "#/components/parameters/HostId"
+        - $ref: "#/components/parameters/CrId"
+      responses:
+        "200":
+          description: Rejoin candidates.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RejoinCandidatesResponse"
+        "400":
+          $ref: "#/components/responses/Error"
+        "401":
+          $ref: "#/components/responses/Error"
+  /sessions/{sessionId}/rejoin:
+    post:
+      summary: Rejoin a session as the original owner
+      security:
+        - albCognito: []
+      parameters:
+        - $ref: "#/components/parameters/SessionId"
+      responses:
+        "200":
+          description: Fresh owner token and WebSocket URL.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionResponse"
+        "401":
+          $ref: "#/components/responses/Error"
+        "502":
+          $ref: "#/components/responses/Error"
+  /sessions/{sessionId}/observe:
+    post:
+      summary: Observe a session read-only
+      security:
+        - albCognito: []
+      parameters:
+        - $ref: "#/components/parameters/SessionId"
+      responses:
+        "200":
+          description: Observer token and WebSocket URL.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/SessionResponse"
+        "401":
+          $ref: "#/components/responses/Error"
+        "502":
+          $ref: "#/components/responses/Error"
+  /automation/runs/start:
+    post:
+      summary: Start an automation run
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AutomationRunRequest"
+      responses:
+        "201":
+          description: Run assigned and capability token issued.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AutomationRunResponse"
+        "400":
+          $ref: "#/components/responses/Error"
+        "502":
+          $ref: "#/components/responses/Error"
+  /automation/runs/{runId}/token:
+    post:
+      summary: Issue a fresh automation capability token
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/RunId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/AutomationTokenRequest"
+      responses:
+        "201":
+          description: Fresh token issued.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AutomationRunResponse"
+        "400":
+          $ref: "#/components/responses/Error"
+        "502":
+          $ref: "#/components/responses/Error"
+  /automation/runs/{runId}/close:
+    post:
+      summary: Close an automation run
+      security:
+        - bearerAuth: []
+      parameters:
+        - $ref: "#/components/parameters/RunId"
+      responses:
+        "204":
+          description: Run closed.
+        "401":
+          $ref: "#/components/responses/Error"
+        "502":
+          $ref: "#/components/responses/Error"
+components:
+  securitySchemes:
+    albCognito:
+      type: apiKey
+      in: header
+      name: x-amzn-oidc-data
+    bearerAuth:
+      type: http
+      scheme: bearer
+  parameters:
+    SessionId:
+      name: sessionId
+      in: path
+      required: true
+      schema:
+        type: string
+    RunId:
+      name: runId
+      in: path
+      required: true
+      schema:
+        type: string
+    HostId:
+      name: hostId
+      in: query
+      required: true
+      schema:
+        type: string
+    CrId:
+      name: crId
+      in: query
+      required: true
+      schema:
+        type: string
+  responses:
+    Health:
+      description: Service is running.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/HealthResponse"
+    Error:
+      description: Structured error response.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ErrorResponse"
+  schemas:
+    HealthResponse:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          example: ok
+    ErrorResponse:
+      type: object
+      required: [error]
+      properties:
+        error:
+          type: object
+          required: [message]
+          properties:
+            message:
+              type: string
+    StartSessionRequest:
+      type: object
+      required: [hostId, crId]
+      properties:
+        hostId:
+          type: string
+        crId:
+          type: string
+        connectionType:
+          type: string
+          enum: [ssh]
+          default: ssh
+    SessionResponse:
+      type: object
+      required: [sessionId, sessionToken, websocketUrl, expiresAt]
+      properties:
+        sessionId:
+          type: string
+        sessionToken:
+          type: string
+        websocketUrl:
+          type: string
+        expiresAt:
+          type: string
+          format: date-time
+    SessionCandidate:
+      type: object
+      required: [sessionId, hostId, crId, connectionType, status, createdAt, lastHeartbeatAt, leaseExpiresAt]
+      properties:
+        sessionId:
+          type: string
+        hostId:
+          type: string
+        crId:
+          type: string
+        connectionType:
+          type: string
+        status:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        lastHeartbeatAt:
+          type: string
+          format: date-time
+        leaseExpiresAt:
+          type: string
+          format: date-time
+    RejoinCandidatesResponse:
+      type: object
+      required: [sessions]
+      properties:
+        sessions:
+          type: array
+          items:
+            $ref: "#/components/schemas/SessionCandidate"
+    AutomationRunRequest:
+      type: object
+      required: [incidentId, hostId, phase, allowedOperations]
+      properties:
+        incidentId:
+          type: string
+        hostId:
+          type: string
+        phase:
+          type: string
+        allowedOperations:
+          type: array
+          minItems: 1
+          items:
+            type: string
+        planHash:
+          type: string
+    AutomationTokenRequest:
+      type: object
+      required: [phase, allowedOperations]
+      properties:
+        phase:
+          type: string
+        allowedOperations:
+          type: array
+          minItems: 1
+          items:
+            type: string
+        planHash:
+          type: string
+    AutomationRunResponse:
+      type: object
+      required: [runId, incidentId, hostId, ownerPodId, ownerInstanceId, operationsUrl, status, createdAt, expiresAt, capabilityToken, tokenExpiresAt]
+      properties:
+        runId:
+          type: string
+        incidentId:
+          type: string
+        hostId:
+          type: string
+        ownerPodId:
+          type: string
+        ownerInstanceId:
+          type: string
+        operationsUrl:
+          type: string
+        status:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        expiresAt:
+          type: string
+          format: date-time
+        capabilityToken:
+          type: string
+        tokenExpiresAt:
+          type: string
+          format: date-time
