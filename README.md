@@ -39,6 +39,7 @@ configuration is incomplete.
 ```http
 GET  /healthz
 POST /sessions/start
+GET  /sessions/rejoin-candidates?hostId={hostId}&crId={crId}
 POST /sessions/{sessionId}/rejoin
 POST /sessions/{sessionId}/observe
 POST /automation/runs/start
@@ -72,3 +73,11 @@ Rejoin and observe requests use an empty JSON object:
 Rejoin is limited to the original session owner. Observe returns an observer
 token; the signed token, rather than a URL parameter, makes the dataplane
 connection read-only.
+
+To discover sessions eligible for owner rejoin, call
+`GET /sessions/rejoin-candidates?hostId={hostId}&crId={crId}`. The control plane
+derives `userId` from verified Cognito identity, validates rejoin access with
+STS, and returns active sessions owned by that user for the requested server and
+change request. The response intentionally excludes session tokens, WebSocket
+URLs, and dataplane ownership fields. Use the selected `sessionId` with
+`POST /sessions/{sessionId}/rejoin` to receive a fresh scoped session token.

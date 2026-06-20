@@ -21,13 +21,37 @@ type SessionResponse struct {
 }
 
 type Session struct {
-	SessionID      string `json:"sessionId"`
-	UserID         string `json:"userId"`
-	HostID         string `json:"hostId"`
-	CRID           string `json:"crId"`
-	ConnectionType string `json:"connectionType"`
-	WebsocketURL   string `json:"websocketUrl"`
-	Status         string `json:"status"`
+	SessionID       string    `json:"sessionId"`
+	UserID          string    `json:"userId"`
+	HostID          string    `json:"hostId"`
+	CRID            string    `json:"crId"`
+	ConnectionType  string    `json:"connectionType"`
+	WebsocketURL    string    `json:"websocketUrl"`
+	Status          string    `json:"status"`
+	CreatedAt       time.Time `json:"createdAt"`
+	LastHeartbeatAt time.Time `json:"lastHeartbeatAt"`
+	LeaseExpiresAt  time.Time `json:"leaseExpiresAt"`
+}
+
+type RejoinCandidatesRequest struct {
+	UserID string `json:"-"`
+	HostID string `json:"hostId"`
+	CRID   string `json:"crId"`
+}
+
+type SessionCandidate struct {
+	SessionID       string    `json:"sessionId"`
+	HostID          string    `json:"hostId"`
+	CRID            string    `json:"crId"`
+	ConnectionType  string    `json:"connectionType"`
+	Status          string    `json:"status"`
+	CreatedAt       time.Time `json:"createdAt"`
+	LastHeartbeatAt time.Time `json:"lastHeartbeatAt"`
+	LeaseExpiresAt  time.Time `json:"leaseExpiresAt"`
+}
+
+type RejoinCandidatesResponse struct {
+	Sessions []SessionCandidate `json:"sessions"`
 }
 
 type AutomationRunRequest struct {
