@@ -71,9 +71,9 @@ Rejoin and observe requests use an empty JSON object:
 {}
 ```
 
-Rejoin is limited to the original session owner. Observe returns an observer
-token; the signed token, rather than a URL parameter, makes the dataplane
-connection read-only.
+Rejoin is limited to the original session owner. Observe is available to any
+authenticated user and returns an observer token; the signed token, rather than
+a URL parameter, makes the dataplane connection read-only.
 
 To discover sessions eligible for owner rejoin, call
 `GET /sessions/rejoin-candidates?hostId={hostId}&crId={crId}`. The control plane
