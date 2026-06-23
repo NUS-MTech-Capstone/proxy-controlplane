@@ -43,6 +43,7 @@ GET  /sessions?status=ACTIVE&mine=false
 GET  /sessions/rejoin-candidates?hostId={hostId}&crId={crId}
 POST /sessions/{sessionId}/rejoin
 POST /sessions/{sessionId}/observe
+POST /sessions/{sessionId}/close
 POST /automation/runs/start
 POST /automation/runs/{runId}/token
 POST /automation/runs/{runId}/close
@@ -70,6 +71,10 @@ Rejoin and observe requests use an empty JSON object:
 ```json
 {}
 ```
+
+Close requests also use an empty JSON object. The session owner may close their
+own session. Users in the Cognito `SecurityAnalyst` or `Admin` groups may close
+another user's active session.
 
 Rejoin is limited to the original session owner. Observe is available to any
 authenticated user and returns an observer token; the signed token, rather than

@@ -69,6 +69,9 @@ func (s *Server) sessionAction(w http.ResponseWriter, r *http.Request) {
 		resp, err = s.svc.RejoinSession(r.Context(), sessionID, req)
 	case "observe":
 		resp, err = s.svc.ObserveSession(r.Context(), sessionID, req)
+	case "close":
+		s.closeSession(w, r, sessionID, req)
+		return
 	default:
 		http.NotFound(w, r)
 		return
@@ -84,6 +87,31 @@ func (s *Server) sessionAction(w http.ResponseWriter, r *http.Request) {
 		"action", action,
 	)
 	writeJSON(w, http.StatusOK, resp)
+}
+
+func (s *Server) closeSession(
+	w http.ResponseWriter,
+	r *http.Request,
+	sessionID string,
+	req model.SessionAccessRequest,
+) {
+	session, err := s.svc.CloseSession(
+		r.Context(),
+		sessionID,
+		req,
+		hasPrivilegedStopRole(cognitoGroupsFromAccessToken(r)),
+	)
+	if err != nil {
+		writeError(w, http.StatusBadGateway, err.Error())
+		return
+	}
+	slog.InfoContext(r.Context(), "SessionClosed",
+		"requestId", observability.RequestID(r.Context()),
+		"sessionId", sessionID,
+		"userId", req.UserID,
+		"action", "close",
+	)
+	writeJSON(w, http.StatusOK, session)
 }
 
 func (s *Server) listSessions(w http.ResponseWriter, r *http.Request) {

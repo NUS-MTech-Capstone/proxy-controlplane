@@ -27,17 +27,21 @@ func (s *Service) ListSessions(ctx context.Context, req model.ListSessionsReques
 	}
 	candidates := make([]model.SessionCandidate, 0, len(sessions))
 	for _, session := range sessions {
-		candidates = append(candidates, model.SessionCandidate{
-			SessionID:       session.SessionID,
-			UserID:          session.UserID,
-			HostID:          session.HostID,
-			CRID:            session.CRID,
-			ConnectionType:  session.ConnectionType,
-			Status:          session.Status,
-			CreatedAt:       session.CreatedAt,
-			LastHeartbeatAt: session.LastHeartbeatAt,
-			LeaseExpiresAt:  session.LeaseExpiresAt,
-		})
+		candidates = append(candidates, sessionCandidateFrom(session))
 	}
 	return model.ListSessionsResponse{Sessions: candidates}, nil
+}
+
+func sessionCandidateFrom(session model.Session) model.SessionCandidate {
+	return model.SessionCandidate{
+		SessionID:       session.SessionID,
+		UserID:          session.UserID,
+		HostID:          session.HostID,
+		CRID:            session.CRID,
+		ConnectionType:  session.ConnectionType,
+		Status:          session.Status,
+		CreatedAt:       session.CreatedAt,
+		LastHeartbeatAt: session.LastHeartbeatAt,
+		LeaseExpiresAt:  session.LeaseExpiresAt,
+	}
 }

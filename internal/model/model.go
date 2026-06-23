@@ -26,7 +26,9 @@ type Session struct {
 	HostID          string    `json:"hostId"`
 	CRID            string    `json:"crId"`
 	ConnectionType  string    `json:"connectionType"`
-	WebsocketURL    string    `json:"websocketUrl"`
+	OwnerPodID      string    `json:"ownerPodId,omitempty"`
+	OwnerInstanceID string    `json:"ownerInstanceId,omitempty"`
+	WebsocketURL    string    `json:"websocketUrl,omitempty"`
 	Status          string    `json:"status"`
 	CreatedAt       time.Time `json:"createdAt"`
 	LastHeartbeatAt time.Time `json:"lastHeartbeatAt"`
