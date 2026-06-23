@@ -13,6 +13,7 @@ func (s *Server) routes() {
 	s.mux.HandleFunc("GET /openapi.yaml", serveYAML(api.OpenAPI))
 
 	s.mux.Handle("POST /sessions/start", cognitoMiddleware(s.identityVerifier, http.HandlerFunc(s.start)))
+	s.mux.Handle("GET /sessions", cognitoMiddleware(s.identityVerifier, http.HandlerFunc(s.listSessions)))
 	s.mux.Handle("GET /sessions/rejoin-candidates", cognitoMiddleware(s.identityVerifier, http.HandlerFunc(s.listRejoinCandidates)))
 	s.mux.Handle("POST /sessions/", cognitoMiddleware(s.identityVerifier, http.HandlerFunc(s.sessionAction)))
 	s.mux.HandleFunc("POST /automation/runs/start", s.startAutomationRun)

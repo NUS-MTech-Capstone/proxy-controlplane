@@ -39,6 +39,7 @@ configuration is incomplete.
 ```http
 GET  /healthz
 POST /sessions/start
+GET  /sessions?status=ACTIVE&mine=false
 GET  /sessions/rejoin-candidates?hostId={hostId}&crId={crId}
 POST /sessions/{sessionId}/rejoin
 POST /sessions/{sessionId}/observe
@@ -81,6 +82,11 @@ STS, and returns active sessions owned by that user for the requested server and
 change request. The response intentionally excludes session tokens, WebSocket
 URLs, and dataplane ownership fields. Use the selected `sessionId` with
 `POST /sessions/{sessionId}/rejoin` to receive a fresh scoped session token.
+
+For webapp session tables, call `GET /sessions`. Optional filters are `hostId`,
+`crId`, `status`, and `mine=true`. The response contains safe session metadata
+only and never includes session tokens, WebSocket URLs, or dataplane ownership
+fields. Token issuance still happens only through start, rejoin, and observe.
 
 ## API Specification
 

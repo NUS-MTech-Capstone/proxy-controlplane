@@ -86,6 +86,35 @@ func (s *Server) sessionAction(w http.ResponseWriter, r *http.Request) {
 	writeJSON(w, http.StatusOK, resp)
 }
 
+func (s *Server) listSessions(w http.ResponseWriter, r *http.Request) {
+	user, ok := cognitoUserFromContext(r.Context())
+	if !ok {
+		writeError(w, http.StatusUnauthorized, "missing Cognito identity")
+		return
+	}
+	query := r.URL.Query()
+	resp, err := s.svc.ListSessions(r.Context(), model.ListSessionsRequest{
+		UserID: user.Subject,
+		HostID: query.Get("hostId"),
+		CRID:   query.Get("crId"),
+		Status: query.Get("status"),
+		Mine:   query.Get("mine") == "true",
+	})
+	if err != nil {
+		writeError(w, http.StatusBadGateway, err.Error())
+		return
+	}
+	slog.InfoContext(r.Context(), "SessionsListed",
+		"requestId", observability.RequestID(r.Context()),
+		"userId", user.Subject,
+		"hostId", query.Get("hostId"),
+		"crId", query.Get("crId"),
+		"status", query.Get("status"),
+		"mine", query.Get("mine"),
+	)
+	writeJSON(w, http.StatusOK, resp)
+}
+
 func (s *Server) listRejoinCandidates(w http.ResponseWriter, r *http.Request) {
 	user, ok := cognitoUserFromContext(r.Context())
 	if !ok {

@@ -36,6 +36,36 @@ paths:
           $ref: "#/components/responses/Error"
         "502":
           $ref: "#/components/responses/Error"
+  /sessions:
+    get:
+      summary: List active sessions for the authenticated web client
+      security:
+        - albCognito: []
+      parameters:
+        - $ref: "#/components/parameters/HostIdOptional"
+        - $ref: "#/components/parameters/CrIdOptional"
+        - name: status
+          in: query
+          schema:
+            type: string
+            enum: [ACTIVE, CLOSED]
+            default: ACTIVE
+        - name: mine
+          in: query
+          schema:
+            type: boolean
+            default: false
+      responses:
+        "200":
+          description: Safe session metadata.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ListSessionsResponse"
+        "401":
+          $ref: "#/components/responses/Error"
+        "502":
+          $ref: "#/components/responses/Error"
   /sessions/rejoin-candidates:
     get:
       summary: List active sessions the authenticated user can rejoin
@@ -185,6 +215,18 @@ components:
       required: true
       schema:
         type: string
+    HostIdOptional:
+      name: hostId
+      in: query
+      required: false
+      schema:
+        type: string
+    CrIdOptional:
+      name: crId
+      in: query
+      required: false
+      schema:
+        type: string
   responses:
     Health:
       description: Service is running.
@@ -243,9 +285,11 @@ components:
           format: date-time
     SessionCandidate:
       type: object
-      required: [sessionId, hostId, crId, connectionType, status, createdAt, lastHeartbeatAt, leaseExpiresAt]
+      required: [sessionId, userId, hostId, crId, connectionType, status, createdAt, lastHeartbeatAt, leaseExpiresAt]
       properties:
         sessionId:
+          type: string
+        userId:
           type: string
         hostId:
           type: string
@@ -265,6 +309,14 @@ components:
           type: string
           format: date-time
     RejoinCandidatesResponse:
+      type: object
+      required: [sessions]
+      properties:
+        sessions:
+          type: array
+          items:
+            $ref: "#/components/schemas/SessionCandidate"
+    ListSessionsResponse:
       type: object
       required: [sessions]
       properties:

@@ -30,6 +30,7 @@ func (s *Service) ListRejoinCandidates(ctx context.Context, req model.RejoinCand
 	for _, session := range sessions {
 		candidates = append(candidates, model.SessionCandidate{
 			SessionID:       session.SessionID,
+			UserID:          session.UserID,
 			HostID:          session.HostID,
 			CRID:            session.CRID,
 			ConnectionType:  session.ConnectionType,

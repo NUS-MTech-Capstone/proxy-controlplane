@@ -41,6 +41,7 @@ type RejoinCandidatesRequest struct {
 
 type SessionCandidate struct {
 	SessionID       string    `json:"sessionId"`
+	UserID          string    `json:"userId,omitempty"`
 	HostID          string    `json:"hostId"`
 	CRID            string    `json:"crId"`
 	ConnectionType  string    `json:"connectionType"`
@@ -48,6 +49,18 @@ type SessionCandidate struct {
 	CreatedAt       time.Time `json:"createdAt"`
 	LastHeartbeatAt time.Time `json:"lastHeartbeatAt"`
 	LeaseExpiresAt  time.Time `json:"leaseExpiresAt"`
+}
+
+type ListSessionsRequest struct {
+	UserID string `json:"-"`
+	HostID string `json:"hostId,omitempty"`
+	CRID   string `json:"crId,omitempty"`
+	Status string `json:"status,omitempty"`
+	Mine   bool   `json:"mine,omitempty"`
+}
+
+type ListSessionsResponse struct {
+	Sessions []SessionCandidate `json:"sessions"`
 }
 
 type RejoinCandidatesResponse struct {
