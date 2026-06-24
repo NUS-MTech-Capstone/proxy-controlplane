@@ -233,3 +233,50 @@ func cognitoUserFromContext(ctx context.Context) (CognitoUser, bool) {
 	user, ok := ctx.Value(cognitoUserContextKey{}).(CognitoUser)
 	return user, ok
 }
+
+var privilegedStopRoles = map[string]struct{}{
+	"SecurityAnalyst": {},
+	"Admin":           {},
+}
+
+func cognitoGroupsFromAccessToken(r *http.Request) []string {
+	token := strings.TrimSpace(r.Header.Get("x-amzn-oidc-accesstoken"))
+	if token == "" {
+		return nil
+	}
+	parts := strings.Split(token, ".")
+	if len(parts) != 3 {
+		return nil
+	}
+	var claims map[string]any
+	if err := decodeJWTPart(parts[1], &claims); err != nil {
+		return nil
+	}
+	raw, ok := claims["cognito:groups"]
+	if !ok {
+		return nil
+	}
+	switch groups := raw.(type) {
+	case []any:
+		out := make([]string, 0, len(groups))
+		for _, group := range groups {
+			if name, ok := group.(string); ok && name != "" {
+				out = append(out, name)
+			}
+		}
+		return out
+	case []string:
+		return groups
+	default:
+		return nil
+	}
+}
+
+func hasPrivilegedStopRole(groups []string) bool {
+	for _, group := range groups {
+		if _, ok := privilegedStopRoles[group]; ok {
+			return true
+		}
+	}
+	return false
+}
