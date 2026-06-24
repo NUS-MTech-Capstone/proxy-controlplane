@@ -71,5 +71,8 @@ func (c *SessionManagerClient) post(ctx context.Context, path string, req any, r
 	if httpResp.StatusCode < 200 || httpResp.StatusCode >= 300 {
 		return fmt.Errorf("session-manager returned status %d", httpResp.StatusCode)
 	}
+	if resp == nil {
+		return nil
+	}
 	return json.NewDecoder(httpResp.Body).Decode(resp)
 }

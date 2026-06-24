@@ -109,6 +109,9 @@ func (c *Client) post(ctx context.Context, path string, req any, resp any) error
 	if httpResp.StatusCode < 200 || httpResp.StatusCode >= 300 {
 		return fmt.Errorf("sts returned status %d", httpResp.StatusCode)
 	}
+	if resp == nil {
+		return nil
+	}
 
 	return json.NewDecoder(httpResp.Body).Decode(resp)
 }
