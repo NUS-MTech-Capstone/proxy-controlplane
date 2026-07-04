@@ -17,6 +17,13 @@ the signed `sub` and `x-amzn-oidc-identity`.
 The verified `sub` becomes `userId`; clients must not send `userId` in the
 request body. `GET /healthz` remains unauthenticated.
 
+## Design Patterns
+
+The service layer acts as a Facade over STS and Session Manager. Public handlers
+call one control-plane operation, while the service coordinates authorization,
+session assignment or lookup, and scoped token issuance without exposing those
+internal calls to clients.
+
 ## Run
 
 ```bash
@@ -52,6 +59,11 @@ POST /automation/runs/{runId}/close
 The automation endpoints are internal workload APIs. Start and token requests
 forward a projected Kubernetes service-account bearer token to STS. They do not
 derive or accept a human `userId`, and they never carry terminal traffic.
+
+In Phase 2, these endpoints are the control-plane bridge for bounded agent
+automation. They should remain internal, workload-authenticated, and scoped to
+STS-issued capabilities; AI agents must not use them to start arbitrary user
+sessions or proxy live terminal data.
 
 Start request body:
 
