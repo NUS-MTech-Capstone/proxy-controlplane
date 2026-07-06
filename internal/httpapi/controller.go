@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/NUS-MTech-Capstone/proxy-controlplane/internal/events"
 	"github.com/NUS-MTech-Capstone/proxy-controlplane/internal/model"
 	"github.com/NUS-MTech-Capstone/proxy-controlplane/internal/observability"
 )
@@ -45,6 +46,17 @@ func (s *Server) start(w http.ResponseWriter, r *http.Request) {
 		"action", "start",
 		"mode", "owner",
 	)
+	s.events.Emit(r.Context(), events.Event{
+		EventType: "SessionStarted",
+		RequestID: observability.RequestID(r.Context()),
+		SessionID: resp.SessionID,
+		UserID:    req.UserID,
+		HostID:    req.HostID,
+		CRID:      req.CRID,
+		Action:    "start",
+		Mode:      "owner",
+		Outcome:   "accepted",
+	})
 	writeJSON(w, http.StatusCreated, resp)
 }
 
@@ -86,6 +98,21 @@ func (s *Server) sessionAction(w http.ResponseWriter, r *http.Request) {
 		"userId", req.UserID,
 		"action", action,
 	)
+	eventType := "UserRejoined"
+	mode := "owner"
+	if action == "observe" {
+		eventType = "ObserverJoined"
+		mode = "observer"
+	}
+	s.events.Emit(r.Context(), events.Event{
+		EventType: eventType,
+		RequestID: observability.RequestID(r.Context()),
+		SessionID: sessionID,
+		UserID:    req.UserID,
+		Action:    action,
+		Mode:      mode,
+		Outcome:   "accepted",
+	})
 	writeJSON(w, http.StatusOK, resp)
 }
 
@@ -111,6 +138,16 @@ func (s *Server) closeSession(
 		"userId", req.UserID,
 		"action", "close",
 	)
+	s.events.Emit(r.Context(), events.Event{
+		EventType: "SessionClosed",
+		RequestID: observability.RequestID(r.Context()),
+		SessionID: sessionID,
+		UserID:    req.UserID,
+		HostID:    session.HostID,
+		CRID:      session.CRID,
+		Action:    "close",
+		Outcome:   "accepted",
+	})
 	writeJSON(w, http.StatusOK, session)
 }
 

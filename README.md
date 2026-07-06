@@ -41,6 +41,21 @@ go run ./cmd/server
 `AWS_REGION` and `COGNITO_USER_POOL_ID`. Production startup fails when verifier
 configuration is incomplete.
 
+Optional lifecycle event publication:
+
+```bash
+EVENT_PUBLISHER_ENABLED=true
+EVENTS_TOPIC_ARN=arn:aws:sns:ap-southeast-1:123456789012:dendenmushi-events-dev
+AWS_REGION=ap-southeast-1
+```
+
+When enabled, the control plane publishes sanitized `SessionStarted`,
+`UserRejoined`, `ObserverJoined`, and user-requested `SessionClosed` metadata
+events to SNS after the synchronous control operation succeeds. Publish
+failures are logged and do not fail the session path. Event payloads never
+include session tokens, WebSocket URLs, terminal data, command bodies, or
+secrets.
+
 ## Endpoints
 
 ```http
