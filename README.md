@@ -51,19 +51,12 @@ GET  /sessions/rejoin-candidates?hostId={hostId}&crId={crId}
 POST /sessions/{sessionId}/rejoin
 POST /sessions/{sessionId}/observe
 POST /sessions/{sessionId}/close
-POST /automation/runs/start
-POST /automation/runs/{runId}/token
-POST /automation/runs/{runId}/close
 ```
 
-The automation endpoints are internal workload APIs. Start and token requests
-forward a projected Kubernetes service-account bearer token to STS. They do not
-derive or accept a human `userId`, and they never carry terminal traffic.
-
-In Phase 2, these endpoints are the control-plane bridge for bounded agent
-automation. They should remain internal, workload-authenticated, and scoped to
-STS-issued capabilities; AI agents must not use them to start arbitrary user
-sessions or proxy live terminal data.
+Bounded Agentic AI and automation run endpoints are owned by
+`agent-controlplane`. Proxy Control Plane remains focused on authenticated
+session start, rejoin, observe, list, and close flows. It never carries
+terminal traffic.
 
 Start request body:
 

@@ -2,7 +2,6 @@ package sts
 
 import (
 	"encoding/json"
-	"errors"
 	"io"
 	"net/http"
 	"strings"
@@ -34,96 +33,6 @@ func TestValidateSendsRequestAndRejectsDeniedResponse(t *testing.T) {
 	err := client.Validate(ctx, ValidateRequest{UserID: "user-1", HostID: "host-1", Action: "start"})
 	if err == nil || !strings.Contains(err.Error(), "change request denied") {
 		t.Fatalf("Validate() error = %v, want denial", err)
-	}
-}
-
-func TestValidateAutomationTokenAcceptsAllowedAndRejectsDenied(t *testing.T) {
-	tests := []struct {
-		name    string
-		body    string
-		wantErr string
-	}{
-		{name: "allowed", body: `{"allowed":true}`},
-		{name: "denied", body: `{"allowed":false,"reason":"expired"}`, wantErr: "expired"},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			client := NewSTS("http://sts.example")
-			client.client.Transport = roundTripFunc(func(req *http.Request) (*http.Response, error) {
-				if req.URL.Path != "/tokens/automation/validate" {
-					t.Fatalf("path = %s", req.URL.Path)
-				}
-				return stsJSONResponse(http.StatusOK, tt.body), nil
-			})
-			err := client.ValidateAutomationToken(t.Context(), "run-1", "token-1")
-			if tt.wantErr == "" && err != nil {
-				t.Fatalf("ValidateAutomationToken() error = %v", err)
-			}
-			if tt.wantErr != "" && (err == nil || !strings.Contains(err.Error(), tt.wantErr)) {
-				t.Fatalf("ValidateAutomationToken() error = %v, want containing %q", err, tt.wantErr)
-			}
-		})
-	}
-}
-
-func TestRequestAutomationTokenSendsBearerTokenAndHandlesErrors(t *testing.T) {
-	tests := []struct {
-		name      string
-		transport http.RoundTripper
-		wantErr   string
-	}{
-		{
-			name: "success",
-			transport: roundTripFunc(func(req *http.Request) (*http.Response, error) {
-				if req.Header.Get("Authorization") != "Bearer workload-token" {
-					t.Fatalf("Authorization = %q", req.Header.Get("Authorization"))
-				}
-				var body AutomationTokenRequest
-				if err := json.NewDecoder(req.Body).Decode(&body); err != nil {
-					t.Fatal(err)
-				}
-				if body.RunID != "run-1" || body.OwnerInstanceID != "instance-1" {
-					t.Fatalf("body = %#v", body)
-				}
-				return stsJSONResponse(http.StatusCreated, `{"capabilityToken":"capability"}`), nil
-			}),
-		},
-		{
-			name: "status",
-			transport: roundTripFunc(func(*http.Request) (*http.Response, error) {
-				return stsJSONResponse(http.StatusForbidden, `{"error":"denied"}`), nil
-			}),
-			wantErr: "status 403",
-		},
-		{
-			name: "transport",
-			transport: roundTripFunc(func(*http.Request) (*http.Response, error) {
-				return nil, errors.New("dial failed")
-			}),
-			wantErr: "dial failed",
-		},
-	}
-	for _, tt := range tests {
-		t.Run(tt.name, func(t *testing.T) {
-			client := NewSTS("http://sts.example")
-			client.client.Transport = tt.transport
-			resp, err := client.RequestAutomationToken(t.Context(), "workload-token", AutomationTokenRequest{
-				RunID: "run-1", IncidentID: "inc-1", HostID: "host-1", Phase: "diagnose",
-				AllowedOperations: []string{"health_check"}, OwnerPodID: "pod-1", OwnerInstanceID: "instance-1",
-			})
-			if tt.wantErr == "" {
-				if err != nil {
-					t.Fatalf("RequestAutomationToken() error = %v", err)
-				}
-				if resp.CapabilityToken != "capability" {
-					t.Fatalf("response = %#v", resp)
-				}
-				return
-			}
-			if err == nil || !strings.Contains(err.Error(), tt.wantErr) {
-				t.Fatalf("RequestAutomationToken() error = %v, want containing %q", err, tt.wantErr)
-			}
-		})
 	}
 }
 

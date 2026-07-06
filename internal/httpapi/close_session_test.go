@@ -7,9 +7,9 @@ import (
 	"strings"
 	"testing"
 	"time"
-	
-	"github.com/NUS-MTech-Capstone/proxy-controlplane/internal/session_manager"
+
 	"github.com/NUS-MTech-Capstone/proxy-controlplane/internal/service"
+	"github.com/NUS-MTech-Capstone/proxy-controlplane/internal/session_manager"
 	"github.com/NUS-MTech-Capstone/proxy-controlplane/internal/sts"
 )
 

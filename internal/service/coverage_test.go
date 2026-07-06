@@ -3,9 +3,7 @@ package service
 import (
 	"net/http"
 	"net/http/httptest"
-	"strings"
 	"testing"
-	"time"
 
 	"github.com/NUS-MTech-Capstone/proxy-controlplane/internal/model"
 	"github.com/NUS-MTech-Capstone/proxy-controlplane/internal/session_manager"
@@ -59,64 +57,5 @@ func TestListRejoinCandidatesValidatesBeforeListing(t *testing.T) {
 	}
 	if len(resp.Sessions) != 1 {
 		t.Fatalf("response = %#v", resp)
-	}
-}
-
-func TestAutomationRunLifecycleService(t *testing.T) {
-	now := time.Date(2026, time.June, 24, 12, 0, 0, 0, time.UTC)
-	smServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		switch {
-		case req.Method == http.MethodPost && req.URL.Path == "/automation/runs":
-			w.WriteHeader(http.StatusCreated)
-			_, _ = w.Write([]byte(`{"runId":"run-1","incidentId":"inc-1","hostId":"host-1","ownerPodId":"pod-1","ownerInstanceId":"instance-1","operationsUrl":"http://ops","status":"ACTIVE"}`))
-		case req.Method == http.MethodGet && req.URL.Path == "/automation/runs/run-1":
-			_, _ = w.Write([]byte(`{"runId":"run-1","incidentId":"inc-1","hostId":"host-1","ownerPodId":"pod-1","ownerInstanceId":"instance-1","operationsUrl":"http://ops","status":"ACTIVE"}`))
-		case req.Method == http.MethodPost && req.URL.Path == "/automation/runs/run-1/close":
-			w.WriteHeader(http.StatusNoContent)
-		default:
-			t.Fatalf("unexpected session-manager request %s %s", req.Method, req.URL.Path)
-		}
-	}))
-	defer smServer.Close()
-	stsServer := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		switch req.URL.Path {
-		case "/tokens/automation":
-			if req.Header.Get("Authorization") != "Bearer workload-token" {
-				t.Fatalf("Authorization = %q", req.Header.Get("Authorization"))
-			}
-			w.WriteHeader(http.StatusCreated)
-			_, _ = w.Write([]byte(`{"capabilityToken":"capability","expiresAt":"` + now.Format(time.RFC3339) + `"}`))
-		case "/tokens/automation/validate":
-			_, _ = w.Write([]byte(`{"allowed":true}`))
-		default:
-			t.Fatalf("unexpected sts request %s", req.URL.Path)
-		}
-	}))
-	defer stsServer.Close()
-	svc := New(sts.NewSTS(stsServer.URL), session_manager.NewSessionManager(smServer.URL))
-
-	start, err := svc.StartAutomationRun(t.Context(), model.AutomationRunRequest{
-		IncidentID: "inc-1", HostID: "host-1", Phase: "diagnose",
-		AllowedOperations: []string{"health_check"}, WorkloadToken: "workload-token",
-	})
-	if err != nil || start.CapabilityToken != "capability" {
-		t.Fatalf("StartAutomationRun() = %#v, %v", start, err)
-	}
-	issued, err := svc.IssueAutomationToken(t.Context(), "run-1", model.AutomationTokenRequest{
-		Phase: "diagnose", AllowedOperations: []string{"health_check"}, WorkloadToken: "workload-token",
-	})
-	if err != nil || issued.RunID != "run-1" {
-		t.Fatalf("IssueAutomationToken() = %#v, %v", issued, err)
-	}
-	if err := svc.CloseAutomationRun(t.Context(), "run-1", "capability"); err != nil {
-		t.Fatalf("CloseAutomationRun() error = %v", err)
-	}
-}
-
-func TestStartAutomationRunRejectsNonDiagnosePhase(t *testing.T) {
-	svc := New(sts.NewSTS("http://sts"), session_manager.NewSessionManager("http://sm"))
-	_, err := svc.StartAutomationRun(t.Context(), model.AutomationRunRequest{Phase: "remediate"})
-	if err == nil || !strings.Contains(err.Error(), "diagnose") {
-		t.Fatalf("StartAutomationRun() error = %v", err)
 	}
 }
