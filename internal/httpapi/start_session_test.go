@@ -20,6 +20,7 @@ func TestStartRejectsAgentConnectionTypeUntilStreamingTransportExists(t *testing
 		"connectionType":"agent"
 	}`))
 	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set(apiVersionHeader, supportedAPIVersion)
 	req.Header.Set("x-amzn-oidc-data", "signed-token")
 	req.Header.Set("x-amzn-oidc-identity", "user-123")
 	rec := httptest.NewRecorder()

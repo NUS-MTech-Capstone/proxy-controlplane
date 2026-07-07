@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: DenDenMushi Proxy Control Plane API
   version: 0.1.0
-  description: Public control API for starting, rejoining, and observing assigned SSH sessions.
+  description: Public control API for starting, rejoining, and observing assigned SSH sessions. Business endpoints require the `x-api-version: 1` header; probe and OpenAPI endpoints are exempt.
 servers:
   - url: http://localhost:8081
 paths:

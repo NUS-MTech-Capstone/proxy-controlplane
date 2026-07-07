@@ -40,6 +40,7 @@ func TestSessionActionRejoinAndObserve(t *testing.T) {
 	for _, path := range []string{"/sessions/sess-1/rejoin", "/sessions/sess-1/observe"} {
 		rec := httptest.NewRecorder()
 		req := httptest.NewRequest(http.MethodPost, path, strings.NewReader(`{}`))
+		req.Header.Set(apiVersionHeader, supportedAPIVersion)
 		req.Header.Set("x-amzn-oidc-data", "signed-token")
 		req.Header.Set("x-amzn-oidc-identity", "user-1")
 		server.ServeHTTP(rec, req)
@@ -54,6 +55,7 @@ func TestSessionActionValidationErrors(t *testing.T) {
 		claims: map[string]any{"sub": "user-1"},
 	})
 	req := httptest.NewRequest(http.MethodPost, "/sessions/sess-1/unknown", strings.NewReader(`{}`))
+	req.Header.Set(apiVersionHeader, supportedAPIVersion)
 	req.Header.Set("x-amzn-oidc-data", "signed-token")
 	req.Header.Set("x-amzn-oidc-identity", "user-1")
 	rec := httptest.NewRecorder()
@@ -63,6 +65,7 @@ func TestSessionActionValidationErrors(t *testing.T) {
 	}
 
 	req = httptest.NewRequest(http.MethodPost, "/sessions/sess-1/rejoin", strings.NewReader(`{`))
+	req.Header.Set(apiVersionHeader, supportedAPIVersion)
 	req.Header.Set("x-amzn-oidc-data", "signed-token")
 	req.Header.Set("x-amzn-oidc-identity", "user-1")
 	rec = httptest.NewRecorder()

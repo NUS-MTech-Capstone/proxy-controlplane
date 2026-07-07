@@ -48,6 +48,7 @@ func TestListSessionsUsesCognitoUserAndSanitizesResponse(t *testing.T) {
 	svc := service.New(sts.NewSTS("http://127.0.0.1:1"), session_manager.NewSessionManager(smServer.URL))
 	server := New(svc, fakeIdentityVerifier{claims: map[string]any{"sub": "user-123"}})
 	req := httptest.NewRequest(http.MethodGet, "/sessions?hostId=host-1&crId=cr-1&mine=true", nil)
+	req.Header.Set(apiVersionHeader, supportedAPIVersion)
 	req.Header.Set("x-amzn-oidc-data", "signed-token")
 	req.Header.Set("x-amzn-oidc-identity", "user-123")
 	rec := httptest.NewRecorder()
@@ -76,6 +77,7 @@ func TestListSessionsRejectsMissingCognitoIdentity(t *testing.T) {
 	svc := service.New(sts.NewSTS("http://127.0.0.1:1"), session_manager.NewSessionManager("http://127.0.0.1:1"))
 	server := New(svc, fakeIdentityVerifier{claims: map[string]any{"sub": "user-123"}})
 	req := httptest.NewRequest(http.MethodGet, "/sessions", nil)
+	req.Header.Set(apiVersionHeader, supportedAPIVersion)
 	rec := httptest.NewRecorder()
 
 	server.ServeHTTP(rec, req)
