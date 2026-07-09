@@ -208,6 +208,39 @@ func TestALBJWTVerifierRejectsUnexpectedSigner(t *testing.T) {
 	}
 }
 
+func TestCognitoGroupsFromAccessTokenAndPrivilegedStopRole(t *testing.T) {
+	token := unsignedJWT(t, map[string]any{"cognito:groups": []any{"Auditor", "Admin"}})
+	req := httptest.NewRequest(http.MethodGet, "/", nil)
+	req.Header.Set("x-amzn-oidc-accesstoken", token)
+	groups := cognitoGroupsFromAccessToken(req)
+	if len(groups) != 2 || groups[1] != "Admin" {
+		t.Fatalf("groups = %#v", groups)
+	}
+	if !hasPrivilegedStopRole(groups) {
+		t.Fatalf("hasPrivilegedStopRole(%#v) = false", groups)
+	}
+	if hasPrivilegedStopRole([]string{"Auditor"}) {
+		t.Fatal("Auditor unexpectedly has privileged stop role")
+	}
+	if groups := cognitoGroupsFromAccessToken(&http.Request{}); groups != nil {
+		t.Fatalf("missing access token groups = %#v", groups)
+	}
+}
+
+func unsignedJWT(t *testing.T, claims map[string]any) string {
+	t.Helper()
+	headerJSON, err := json.Marshal(map[string]any{"alg": "none"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	claimsJSON, err := json.Marshal(claims)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return base64.RawURLEncoding.EncodeToString(headerJSON) + "." +
+		base64.RawURLEncoding.EncodeToString(claimsJSON) + ".signature"
+}
+
 func signedALBToken(
 	t *testing.T,
 	privateKey *ecdsa.PrivateKey,
