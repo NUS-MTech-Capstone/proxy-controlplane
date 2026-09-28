@@ -127,3 +127,8 @@ Business endpoints require `x-api-version: 1`. `GET /healthz` and
 headers.
 Successful probe request logs are suppressed; failed probe responses still emit
 request logs.
+
+All HTTP responses use `Cache-Control: no-store`, disable MIME sniffing and
+framing, and apply `Referrer-Policy: no-referrer`. The service does not emit
+CORS allow headers: browser access is intentionally same-origin through the
+public ALB.

@@ -31,5 +31,5 @@ func New(svc *service.Service, identityVerifier IdentityVerifier, publishers ...
 }
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	observability.RequestIDMiddleware(observability.LogRequests(apiVersionMiddleware(s.mux))).ServeHTTP(w, r)
+	securityHeadersMiddleware(observability.RequestIDMiddleware(observability.LogRequests(apiVersionMiddleware(s.mux)))).ServeHTTP(w, r)
 }
