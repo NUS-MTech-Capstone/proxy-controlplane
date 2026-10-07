@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"testing"
 
 	"github.com/NUS-MTech-Capstone/proxy-controlplane/internal/model"
@@ -43,7 +44,7 @@ func TestCloseSessionUsesOwnerInstanceAndAllowsPrivilegedStop(t *testing.T) {
 	if err != nil {
 		t.Fatalf("CloseSession() error = %v", err)
 	}
-	if validateReq != (sts.ValidateRequest{UserID: "admin-user", SessionID: "sess-1", Action: "stop"}) {
+	if !reflect.DeepEqual(validateReq, (sts.ValidateRequest{UserID: "admin-user", SessionID: "sess-1", Action: "stop"})) {
 		t.Fatalf("validate request = %#v", validateReq)
 	}
 	if closedPath != "/sessions/sess-1/close" || closeReq["ownerPodId"] != "pod-1" || closeReq["ownerInstanceId"] != "instance-1" {

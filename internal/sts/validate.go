@@ -2,15 +2,18 @@ package sts
 
 import (
 	"context"
-	"fmt"
+	"errors"
 )
 
+var ErrAccessDenied = errors.New("access denied")
+
 type ValidateRequest struct {
-	UserID    string `json:"userId"`
-	HostID    string `json:"hostId,omitempty"`
-	CRID      string `json:"crId,omitempty"`
-	SessionID string `json:"sessionId,omitempty"`
-	Action    string `json:"action"`
+	ActorGroups []string `json:"actorGroups"`
+	UserID      string   `json:"userId"`
+	HostID      string   `json:"hostId,omitempty"`
+	CRID        string   `json:"crId,omitempty"`
+	SessionID   string   `json:"sessionId,omitempty"`
+	Action      string   `json:"action"`
 }
 
 type ValidateResponse struct {
@@ -24,7 +27,7 @@ func (c *Client) Validate(ctx context.Context, req ValidateRequest) error {
 		return err
 	}
 	if !resp.Allowed {
-		return fmt.Errorf("access denied: %s", resp.Reason)
+		return ErrAccessDenied
 	}
 	return nil
 }

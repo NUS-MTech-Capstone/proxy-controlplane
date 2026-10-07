@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
+	"reflect"
 	"testing"
 	"time"
 
@@ -56,16 +57,16 @@ func TestStartSessionDefaultsToSSHAndRequestsOwnerToken(t *testing.T) {
 		t.Fatalf("StartSession() error = %v", err)
 	}
 
-	if validateReq != (sts.ValidateRequest{UserID: "user-1", HostID: "host-1", CRID: "cr-1", Action: "start"}) {
+	if !reflect.DeepEqual(validateReq, (sts.ValidateRequest{UserID: "user-1", HostID: "host-1", CRID: "cr-1", Action: "start"})) {
 		t.Fatalf("validate request = %#v", validateReq)
 	}
 	if createReq.ConnectionType != "ssh" {
 		t.Fatalf("create session connectionType = %q, want ssh", createReq.ConnectionType)
 	}
-	if tokenReq != (sts.TokenRequest{
+	if !reflect.DeepEqual(tokenReq, (sts.TokenRequest{
 		SessionID: "sess-1", UserID: "user-1", HostID: "host-1", CRID: "cr-1",
 		ConnectionType: "ssh", Action: "start", Mode: "owner",
-	}) {
+	})) {
 		t.Fatalf("token request = %#v", tokenReq)
 	}
 	if resp.SessionToken != "owner-token" || !resp.ExpiresAt.Equal(expiresAt) ||
@@ -122,11 +123,11 @@ func TestObserveSessionRequestsObserverToken(t *testing.T) {
 	}
 
 	wantValidate := []sts.ValidateRequest{
-		{UserID: "observer-user", SessionID: "sess-1", Action: "observe"},
-		{UserID: "owner-user", SessionID: "sess-1", Action: "observe"},
+		{UserID: "observer-user", SessionID: "sess-1", HostID: "host-1", CRID: "cr-1", Action: "observe"},
+		{UserID: "owner-user", SessionID: "sess-1", HostID: "host-1", CRID: "cr-1", Action: "observe"},
 	}
 	for i, want := range wantValidate {
-		if validateReqs[i] != want {
+		if !reflect.DeepEqual(validateReqs[i], want) {
 			t.Fatalf("validate request %d = %#v, want %#v", i, validateReqs[i], want)
 		}
 	}
@@ -141,7 +142,7 @@ func TestObserveSessionRequestsObserverToken(t *testing.T) {
 		},
 	}
 	for i, want := range wantToken {
-		if tokenReqs[i] != want {
+		if !reflect.DeepEqual(tokenReqs[i], want) {
 			t.Fatalf("token request %d = %#v, want %#v", i, tokenReqs[i], want)
 		}
 	}

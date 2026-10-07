@@ -23,12 +23,14 @@ type cognitoUserContextKey struct{}
 
 type CognitoUser struct {
 	Subject string         `json:"sub"`
+	Groups  []string       `json:"groups"`
 	Email   string         `json:"email,omitempty"`
 	Claims  map[string]any `json:"claims,omitempty"`
 }
 
 type IdentityVerifier interface {
 	Verify(context.Context, string) (map[string]any, error)
+	VerifyAccess(context.Context, string) (map[string]any, error)
 }
 
 type ALBJWTVerifierConfig struct {
@@ -41,6 +43,7 @@ type ALBJWTVerifierConfig struct {
 }
 
 type ALBJWTVerifier struct {
+	*CognitoAccessVerifier
 	albARN           string
 	issuer           string
 	clientID         string
@@ -63,12 +66,13 @@ func NewALBJWTVerifier(cfg ALBJWTVerifierConfig) (*ALBJWTVerifier, error) {
 		client = &http.Client{Timeout: 5 * time.Second}
 	}
 	return &ALBJWTVerifier{
-		albARN:           cfg.ALBARN,
-		issuer:           cfg.Issuer,
-		clientID:         cfg.ClientID,
-		publicKeyBaseURL: strings.TrimRight(baseURL, "/"),
-		httpClient:       client,
-		keys:             make(map[string]*ecdsa.PublicKey),
+		CognitoAccessVerifier: NewCognitoAccessVerifier(cfg.Issuer, cfg.ClientID, client),
+		albARN:                cfg.ALBARN,
+		issuer:                cfg.Issuer,
+		clientID:              cfg.ClientID,
+		publicKeyBaseURL:      strings.TrimRight(baseURL, "/"),
+		httpClient:            client,
+		keys:                  make(map[string]*ecdsa.PublicKey),
 	}, nil
 }
 
@@ -210,8 +214,16 @@ func cognitoUserFromALBHeaders(r *http.Request, verifier IdentityVerifier) (Cogn
 	if identity == "" || identity != subject {
 		return CognitoUser{}, errors.New("ALB identity does not match signed subject")
 	}
+	access, err := verifier.VerifyAccess(r.Context(), r.Header.Get("x-amzn-oidc-accesstoken"))
+	if err != nil || access["sub"] != subject {
+		return CognitoUser{}, errors.New("Cognito access identity does not match signed subject")
+	}
+	groups, ok := access["cognito:groups"].([]string)
+	if !ok {
+		return CognitoUser{}, errors.New("invalid verified actor groups")
+	}
 	email, _ := claims["email"].(string)
-	return CognitoUser{Subject: subject, Email: email, Claims: claims}, nil
+	return CognitoUser{Subject: subject, Email: email, Claims: claims, Groups: groups}, nil
 }
 
 func decodeJWTPart(value string, target any) error {
@@ -237,39 +249,6 @@ func cognitoUserFromContext(ctx context.Context) (CognitoUser, bool) {
 var privilegedStopRoles = map[string]struct{}{
 	"SecurityAnalyst": {},
 	"Admin":           {},
-}
-
-func cognitoGroupsFromAccessToken(r *http.Request) []string {
-	token := strings.TrimSpace(r.Header.Get("x-amzn-oidc-accesstoken"))
-	if token == "" {
-		return nil
-	}
-	parts := strings.Split(token, ".")
-	if len(parts) != 3 {
-		return nil
-	}
-	var claims map[string]any
-	if err := decodeJWTPart(parts[1], &claims); err != nil {
-		return nil
-	}
-	raw, ok := claims["cognito:groups"]
-	if !ok {
-		return nil
-	}
-	switch groups := raw.(type) {
-	case []any:
-		out := make([]string, 0, len(groups))
-		for _, group := range groups {
-			if name, ok := group.(string); ok && name != "" {
-				out = append(out, name)
-			}
-		}
-		return out
-	case []string:
-		return groups
-	default:
-		return nil
-	}
 }
 
 func hasPrivilegedStopRole(groups []string) bool {

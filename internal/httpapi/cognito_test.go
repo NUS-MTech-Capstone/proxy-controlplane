@@ -21,8 +21,10 @@ import (
 )
 
 type fakeIdentityVerifier struct {
-	claims map[string]any
-	err    error
+	claims       map[string]any
+	err          error
+	accessClaims map[string]any
+	accessErr    error
 }
 
 type roundTripFunc func(*http.Request) (*http.Response, error)
@@ -208,22 +210,9 @@ func TestALBJWTVerifierRejectsUnexpectedSigner(t *testing.T) {
 	}
 }
 
-func TestCognitoGroupsFromAccessTokenAndPrivilegedStopRole(t *testing.T) {
-	token := unsignedJWT(t, map[string]any{"cognito:groups": []any{"Auditor", "Admin"}})
-	req := httptest.NewRequest(http.MethodGet, "/", nil)
-	req.Header.Set("x-amzn-oidc-accesstoken", token)
-	groups := cognitoGroupsFromAccessToken(req)
-	if len(groups) != 2 || groups[1] != "Admin" {
-		t.Fatalf("groups = %#v", groups)
-	}
-	if !hasPrivilegedStopRole(groups) {
-		t.Fatalf("hasPrivilegedStopRole(%#v) = false", groups)
-	}
-	if hasPrivilegedStopRole([]string{"Auditor"}) {
-		t.Fatal("Auditor unexpectedly has privileged stop role")
-	}
-	if groups := cognitoGroupsFromAccessToken(&http.Request{}); groups != nil {
-		t.Fatalf("missing access token groups = %#v", groups)
+func TestPrivilegedStopRole(t *testing.T) {
+	if !hasPrivilegedStopRole([]string{"Admin"}) || !hasPrivilegedStopRole([]string{"SecurityAnalyst"}) || hasPrivilegedStopRole([]string{"Auditor"}) {
+		t.Fatal("unexpected privileged stop role")
 	}
 }
 
@@ -272,4 +261,14 @@ func paddedInteger(value *big.Int, size int) []byte {
 	bytes := value.Bytes()
 	copy(result[size-len(bytes):], bytes)
 	return result
+}
+
+func (f fakeIdentityVerifier) VerifyAccess(context.Context, string) (map[string]any, error) {
+	if f.accessErr != nil {
+		return nil, f.accessErr
+	}
+	if f.accessClaims != nil {
+		return f.accessClaims, nil
+	}
+	return map[string]any{"sub": f.claims["sub"], "cognito:groups": []string{"Employee"}}, nil
 }

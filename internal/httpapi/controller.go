@@ -21,6 +21,7 @@ func (s *Server) start(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	req.UserID = user.Subject
+	req.ActorGroups = user.Groups
 	if req.HostID == "" || req.CRID == "" {
 		writeError(w, http.StatusBadRequest, "hostId and crId are required")
 		return
@@ -34,7 +35,7 @@ func (s *Server) start(w http.ResponseWriter, r *http.Request) {
 	}
 	resp, err := s.svc.StartSession(r.Context(), req)
 	if err != nil {
-		writeError(w, http.StatusBadGateway, err.Error())
+		writeServiceError(w, err)
 		return
 	}
 	slog.InfoContext(r.Context(), "SessionStarted",
@@ -72,6 +73,7 @@ func (s *Server) sessionAction(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	req.UserID = user.Subject
+	req.ActorGroups = user.Groups
 	var (
 		resp model.SessionResponse
 		err  error
@@ -89,7 +91,7 @@ func (s *Server) sessionAction(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err != nil {
-		writeError(w, http.StatusBadGateway, err.Error())
+		writeServiceError(w, err)
 		return
 	}
 	slog.InfoContext(r.Context(), "SessionAccess",
@@ -126,10 +128,10 @@ func (s *Server) closeSession(
 		r.Context(),
 		sessionID,
 		req,
-		hasPrivilegedStopRole(cognitoGroupsFromAccessToken(r)),
+		hasPrivilegedStopRole(req.ActorGroups),
 	)
 	if err != nil {
-		writeError(w, http.StatusBadGateway, err.Error())
+		writeServiceError(w, err)
 		return
 	}
 	slog.InfoContext(r.Context(), "SessionClosed",
@@ -166,7 +168,7 @@ func (s *Server) listSessions(w http.ResponseWriter, r *http.Request) {
 		Mine:   query.Get("mine") == "true",
 	})
 	if err != nil {
-		writeError(w, http.StatusBadGateway, err.Error())
+		writeServiceError(w, err)
 		return
 	}
 	slog.InfoContext(r.Context(), "SessionsListed",
@@ -187,9 +189,10 @@ func (s *Server) listRejoinCandidates(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	req := model.RejoinCandidatesRequest{
-		UserID: user.Subject,
-		HostID: r.URL.Query().Get("hostId"),
-		CRID:   r.URL.Query().Get("crId"),
+		ActorGroups: user.Groups,
+		UserID:      user.Subject,
+		HostID:      r.URL.Query().Get("hostId"),
+		CRID:        r.URL.Query().Get("crId"),
 	}
 	if req.HostID == "" || req.CRID == "" {
 		writeError(w, http.StatusBadRequest, "hostId and crId are required")
@@ -197,7 +200,7 @@ func (s *Server) listRejoinCandidates(w http.ResponseWriter, r *http.Request) {
 	}
 	resp, err := s.svc.ListRejoinCandidates(r.Context(), req)
 	if err != nil {
-		writeError(w, http.StatusBadGateway, err.Error())
+		writeServiceError(w, err)
 		return
 	}
 	slog.InfoContext(r.Context(), "RejoinCandidatesListed",
