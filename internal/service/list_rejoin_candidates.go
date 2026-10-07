@@ -9,7 +9,7 @@ import (
 )
 
 func (s *Service) ListRejoinCandidates(ctx context.Context, req model.RejoinCandidatesRequest) (model.RejoinCandidatesResponse, error) {
-	if err := s.sts.Validate(ctx, sts.ValidateRequest{
+	if err := s.sts.Validate(ctx, sts.ValidateRequest{ActorGroups: req.ActorGroups,
 		UserID: req.UserID,
 		HostID: req.HostID,
 		CRID:   req.CRID,

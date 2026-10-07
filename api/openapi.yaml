@@ -2,7 +2,7 @@ openapi: 3.1.0
 info:
   title: DenDenMushi Proxy Control Plane API
   version: 0.1.0
-  description: Public control API for starting, rejoining, and observing assigned SSH sessions. Business endpoints require the `x-api-version: 1` header; probe and OpenAPI endpoints are exempt.
+  description: "Public control API for starting, rejoining, and observing assigned SSH sessions. ALB identity and Cognito access tokens are cryptographically verified and subject-bound; current CR approval, time window, actor-group entitlement and explicit host scope are enforced by STS. Business endpoints require the `x-api-version: 1` header; probe and OpenAPI endpoints are exempt."
 servers:
   - url: http://localhost:8081
 paths:
@@ -31,6 +31,8 @@ paths:
               schema:
                 $ref: "#/components/schemas/SessionResponse"
         "400":
+          $ref: "#/components/responses/Error"
+        "403":
           $ref: "#/components/responses/Error"
         "401":
           $ref: "#/components/responses/Error"
@@ -62,6 +64,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/ListSessionsResponse"
+        "403":
+          $ref: "#/components/responses/Error"
         "401":
           $ref: "#/components/responses/Error"
         "502":
@@ -83,6 +87,8 @@ paths:
                 $ref: "#/components/schemas/RejoinCandidatesResponse"
         "400":
           $ref: "#/components/responses/Error"
+        "403":
+          $ref: "#/components/responses/Error"
         "401":
           $ref: "#/components/responses/Error"
   /sessions/{sessionId}/rejoin:
@@ -99,6 +105,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/SessionResponse"
+        "403":
+          $ref: "#/components/responses/Error"
         "401":
           $ref: "#/components/responses/Error"
         "502":
@@ -117,6 +125,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/SessionResponse"
+        "403":
+          $ref: "#/components/responses/Error"
         "401":
           $ref: "#/components/responses/Error"
         "502":
@@ -142,6 +152,8 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/SessionCandidate"
+        "403":
+          $ref: "#/components/responses/Error"
         "401":
           $ref: "#/components/responses/Error"
         "502":

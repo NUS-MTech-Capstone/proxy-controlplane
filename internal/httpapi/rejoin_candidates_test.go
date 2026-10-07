@@ -134,8 +134,8 @@ func TestListRejoinCandidatesBlocksSTSDenial(t *testing.T) {
 
 	server.ServeHTTP(rec, req)
 
-	if rec.Code != http.StatusBadGateway {
-		t.Fatalf("status = %d, want %d", rec.Code, http.StatusBadGateway)
+	if rec.Code != http.StatusForbidden {
+		t.Fatalf("status = %d, want %d", rec.Code, http.StatusForbidden)
 	}
 	if smCalled {
 		t.Fatal("session-manager was called after STS denial")

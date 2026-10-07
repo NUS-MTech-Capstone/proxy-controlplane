@@ -2,6 +2,7 @@ package sts
 
 import (
 	"encoding/json"
+	"errors"
 	"io"
 	"net/http"
 	"strings"
@@ -31,7 +32,7 @@ func TestValidateSendsRequestAndRejectsDeniedResponse(t *testing.T) {
 
 	ctx := observability.ContextWithRequestID(t.Context(), "req-1")
 	err := client.Validate(ctx, ValidateRequest{UserID: "user-1", HostID: "host-1", Action: "start"})
-	if err == nil || !strings.Contains(err.Error(), "change request denied") {
+	if !errors.Is(err, ErrAccessDenied) {
 		t.Fatalf("Validate() error = %v, want denial", err)
 	}
 }

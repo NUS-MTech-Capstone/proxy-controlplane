@@ -9,9 +9,6 @@ import (
 )
 
 func (s *Service) RejoinSession(ctx context.Context, sessionID string, req model.SessionAccessRequest) (model.SessionResponse, error) {
-	if err := s.sts.Validate(ctx, sts.ValidateRequest{UserID: req.UserID, SessionID: sessionID, Action: "rejoin"}); err != nil {
-		return model.SessionResponse{}, err
-	}
 	session, err := s.sm.GetSession(ctx, sessionID)
 	if err != nil {
 		return model.SessionResponse{}, err
@@ -23,7 +20,11 @@ func (s *Service) RejoinSession(ctx context.Context, sessionID string, req model
 		return model.SessionResponse{}, errors.New("authenticated user does not own the session")
 	}
 
-	token, err := s.sts.RequestToken(ctx, sts.TokenRequest{
+	if err := s.sts.Validate(ctx, sts.ValidateRequest{ActorGroups: req.ActorGroups, UserID: req.UserID, SessionID: sessionID, HostID: session.HostID, CRID: session.CRID, Action: "rejoin"}); err != nil {
+		return model.SessionResponse{}, err
+	}
+
+	token, err := s.sts.RequestToken(ctx, sts.TokenRequest{ActorGroups: req.ActorGroups,
 		SessionID: session.SessionID, UserID: req.UserID, HostID: session.HostID, CRID: session.CRID,
 		ConnectionType: session.ConnectionType, Action: "rejoin", Mode: "owner",
 	})

@@ -14,6 +14,13 @@ regional ALB public key endpoint. It rejects an unexpected signer ALB ARN,
 issuer, client ID, algorithm, key ID, signature, expiry, or a mismatch between
 the signed `sub` and `x-amzn-oidc-identity`.
 
+The Cognito access token in `x-amzn-oidc-accesstoken` is also verified against
+the configured issuer's cached JWKS. Verification requires RS256, valid expiry,
+access-token purpose, the configured client ID, and subject equality with the
+verified ALB identity. Only verified `cognito:groups` populate internal
+`actorGroups`; browser identity/group fields cannot override them. JWKS reads
+have bounded timeouts, response sizes, key counts, and unknown-key refreshes.
+
 The verified `sub` becomes `userId`; clients must not send `userId` in the
 request body. `GET /healthz` remains unauthenticated.
 
@@ -96,8 +103,7 @@ Close requests also use an empty JSON object. The session owner may close their
 own session. Users in the Cognito `SecurityAnalyst` or `Admin` groups may close
 another user's active session.
 
-Rejoin is limited to the original session owner. Observe is available to any
-authenticated user and returns an observer token; the signed token, rather than
+Rejoin is limited to the original session owner. Observe requires current CR authorization and returns an observer token; the signed token, rather than
 a URL parameter, makes the dataplane connection read-only.
 
 To discover sessions eligible for owner rejoin, call
@@ -132,3 +138,35 @@ All HTTP responses use `Cache-Control: no-store`, disable MIME sniffing and
 framing, and apply `Referrer-Policy: no-referrer`. The service does not emit
 CORS allow headers: browser access is intentionally same-origin through the
 public ALB.
+
+## Change-request policy and rollout
+
+Start, rejoin, observe, and rejoin discovery require STS to approve the current
+CR window, explicit host scope, and actor-group entitlement. `Admin` bypasses
+role matching only; it cannot bypass approval, time, or host scope. Rejoin and
+observe use Session Manager's trusted host/CR metadata rather than browser
+fields. STS rechecks the policy before issuing each session token.
+
+STS denials return HTTP 403 with a sanitized error. If token issuance fails after
+a new assignment, the control plane attempts a bounded close using both
+`ownerPodId` and `ownerInstanceId`, even if the original request was cancelled.
+Existing sessions are not closed by a denied rejoin or observe request. Close
+remains available after CR expiry and privileged close uses verified groups.
+
+Deploy Nest Backend first, this service second, and enforcing STS last. No new
+Cognito configuration or database migration is needed. Existing attachments,
+token TTLs, and direct browser-to-dataplane traffic retain their behavior.
+
+Cross-repository verification, from this repository:
+
+```bash
+(cd ../sts && go build -o /tmp/ddm-sts-contract-test ./cmd/server)
+DDM_STS_INTEGRATION_BINARY=/tmp/ddm-sts-contract-test \
+DDM_NEST_CONTRACT_FIXTURE="$(cd ../nest-backend && pwd)/test/fixtures/sts-change-request.json" \
+go test -race ./...
+```
+
+The integration test runs a real STS process with local signed ALB/Cognito
+fixtures, a Nest-tested wire-contract fixture, and controlled Session Manager
+responses. It covers valid access, expired/future CRs, actor denials, missing or
+empty scope, out-of-scope hosts, and assignment cleanup after expiry.

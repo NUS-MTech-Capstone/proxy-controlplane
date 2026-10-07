@@ -13,13 +13,14 @@ import (
 )
 
 type TokenRequest struct {
-	SessionID      string `json:"sessionId"`
-	UserID         string `json:"userId"`
-	HostID         string `json:"hostId"`
-	CRID           string `json:"crId"`
-	ConnectionType string `json:"connectionType"`
-	Action         string `json:"action"`
-	Mode           string `json:"mode"`
+	ActorGroups    []string `json:"actorGroups"`
+	SessionID      string   `json:"sessionId"`
+	UserID         string   `json:"userId"`
+	HostID         string   `json:"hostId"`
+	CRID           string   `json:"crId"`
+	ConnectionType string   `json:"connectionType"`
+	Action         string   `json:"action"`
+	Mode           string   `json:"mode"`
 }
 
 type TokenResponse struct {
@@ -52,7 +53,10 @@ func (c *Client) post(ctx context.Context, path string, req any, resp any) error
 	}
 	defer httpResp.Body.Close()
 	if httpResp.StatusCode < 200 || httpResp.StatusCode >= 300 {
-		err := fmt.Errorf("sts returned status %d", httpResp.StatusCode)
+		var err error = fmt.Errorf("sts returned status %d", httpResp.StatusCode)
+		if httpResp.StatusCode == http.StatusForbidden {
+			err = ErrAccessDenied
+		}
 		recordSTSDependency(ctx, path, time.Since(start), err, httpResp.StatusCode)
 		return err
 	}

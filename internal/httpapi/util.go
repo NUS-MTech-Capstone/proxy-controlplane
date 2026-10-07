@@ -2,7 +2,10 @@ package httpapi
 
 import (
 	"encoding/json"
+	"errors"
 	"net/http"
+
+	"github.com/NUS-MTech-Capstone/proxy-controlplane/internal/sts"
 )
 
 func decode(w http.ResponseWriter, r *http.Request, v any) bool {
@@ -22,4 +25,12 @@ func writeJSON(w http.ResponseWriter, status int, v any) {
 
 func writeError(w http.ResponseWriter, status int, message string) {
 	writeJSON(w, status, map[string]any{"error": map[string]string{"message": message}})
+}
+
+func writeServiceError(w http.ResponseWriter, err error) {
+	if errors.Is(err, sts.ErrAccessDenied) {
+		writeError(w, http.StatusForbidden, "access denied")
+		return
+	}
+	writeError(w, http.StatusBadGateway, "session operation failed")
 }

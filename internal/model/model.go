@@ -3,14 +3,16 @@ package model
 import "time"
 
 type StartSessionRequest struct {
-	UserID         string `json:"-"`
-	HostID         string `json:"hostId"`
-	CRID           string `json:"crId"`
-	ConnectionType string `json:"connectionType,omitempty"`
+	ActorGroups    []string `json:"-"`
+	UserID         string   `json:"-"`
+	HostID         string   `json:"hostId"`
+	CRID           string   `json:"crId"`
+	ConnectionType string   `json:"connectionType,omitempty"`
 }
 
 type SessionAccessRequest struct {
-	UserID string `json:"-"`
+	ActorGroups []string `json:"-"`
+	UserID      string   `json:"-"`
 }
 
 type SessionResponse struct {
@@ -36,9 +38,10 @@ type Session struct {
 }
 
 type RejoinCandidatesRequest struct {
-	UserID string `json:"-"`
-	HostID string `json:"hostId"`
-	CRID   string `json:"crId"`
+	ActorGroups []string `json:"-"`
+	UserID      string   `json:"-"`
+	HostID      string   `json:"hostId"`
+	CRID        string   `json:"crId"`
 }
 
 type SessionCandidate struct {
