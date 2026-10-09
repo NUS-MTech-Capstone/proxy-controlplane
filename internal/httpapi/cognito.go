@@ -246,14 +246,9 @@ func cognitoUserFromContext(ctx context.Context) (CognitoUser, bool) {
 	return user, ok
 }
 
-var privilegedStopRoles = map[string]struct{}{
-	"SecurityAnalyst": {},
-	"Admin":           {},
-}
-
 func hasPrivilegedStopRole(groups []string) bool {
 	for _, group := range groups {
-		if _, ok := privilegedStopRoles[group]; ok {
+		if strings.EqualFold(group, "Admin") || strings.EqualFold(group, "SecurityAnalyst") {
 			return true
 		}
 	}

@@ -152,6 +152,10 @@ a new assignment, the control plane attempts a bounded close using both
 `ownerPodId` and `ownerInstanceId`, even if the original request was cancelled.
 Existing sessions are not closed by a denied rejoin or observe request. Close
 remains available after CR expiry and privileged close uses verified groups.
+Role names are matched case-insensitively, consistent with the web application's
+Cognito role mapping: `admin` has the same role as `Admin`, and
+`securityanalyst` as `SecurityAnalyst`. Browser-supplied roles remain ignored;
+whitespace-padded groups are invalid, and host/CR identifiers retain exact matching.
 
 Deploy Nest Backend first, this service second, and enforcing STS last. No new
 Cognito configuration or database migration is needed. Existing attachments,

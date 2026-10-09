@@ -211,8 +211,19 @@ func TestALBJWTVerifierRejectsUnexpectedSigner(t *testing.T) {
 }
 
 func TestPrivilegedStopRole(t *testing.T) {
-	if !hasPrivilegedStopRole([]string{"Admin"}) || !hasPrivilegedStopRole([]string{"SecurityAnalyst"}) || hasPrivilegedStopRole([]string{"Auditor"}) {
-		t.Fatal("unexpected privileged stop role")
+	for _, tt := range []struct {
+		group   string
+		allowed bool
+	}{
+		{"Admin", true}, {"admin", true}, {"aDmIn", true},
+		{"SecurityAnalyst", true}, {"securityanalyst", true},
+		{"Auditor", false}, {"", false}, {" admin", false}, {"Admin ", false}, {"SuperAdmin", false},
+	} {
+		t.Run(tt.group, func(t *testing.T) {
+			if got := hasPrivilegedStopRole([]string{tt.group}); got != tt.allowed {
+				t.Fatalf("got %v, want %v", got, tt.allowed)
+			}
+		})
 	}
 }
 

@@ -116,7 +116,16 @@ func TestTrustedActorForwardingAndPolicyDenials(t *testing.T) {
 }
 
 func TestPrivilegedCloseUsesVerifiedGroups(t *testing.T) {
-	for _, groups := range [][]string{{"Employee"}, {"Admin"}, {"SecurityAnalyst"}} {
+	for _, tt := range []struct {
+		groups  []string
+		allowed bool
+	}{
+		{[]string{"Employee"}, false}, {[]string{"Auditor"}, false},
+		{[]string{"Admin"}, true}, {[]string{"admin"}, true}, {[]string{"aDmIn"}, true},
+		{[]string{"SecurityAnalyst"}, true}, {[]string{"securityanalyst"}, true},
+		{[]string{"admin "}, false}, {[]string{"SuperAdmin"}, false},
+	} {
+		groups := tt.groups
 		t.Run(strings.Join(groups, ","), func(t *testing.T) {
 			closed := false
 			sm := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -135,7 +144,7 @@ func TestPrivilegedCloseUsesVerifiedGroups(t *testing.T) {
 			req.Header.Set("x-amzn-oidc-accesstoken", unsignedJWT(t, map[string]any{"cognito:groups": []string{"Admin"}}))
 			rec := httptest.NewRecorder()
 			server.ServeHTTP(rec, req)
-			if closed != (groups[0] != "Employee") {
+			if closed != tt.allowed {
 				t.Error("close used unverified groups")
 			}
 		})
