@@ -150,15 +150,18 @@ func TestTrustedSTSIntegration(t *testing.T) {
 		allowed bool
 	}{
 		{"valid", nil, []string{"Employee"}, true},
+		{"lowercase role", nil, []string{"employee"}, true},
+		{"lowercase admin", func(cr map[string]any) { cr["allowedRoles"] = []string{} }, []string{"admin"}, true},
+		{"mixed case admin", func(cr map[string]any) { cr["allowedRoles"] = []string{} }, []string{"aDmIn"}, true},
 		{"expired", func(cr map[string]any) {
 			cr["implementationEndAt"] = time.Now().Add(-time.Minute).UTC().Format(time.RFC3339)
-		}, []string{"Admin"}, false},
+		}, []string{"admin"}, false},
 		{"future", func(cr map[string]any) {
 			cr["implementationStartAt"] = time.Now().Add(time.Minute).UTC().Format(time.RFC3339)
 		}, []string{"Employee"}, false},
 		{"unauthorized", nil, []string{"Auditor"}, false},
 		{"missing scope", func(cr map[string]any) { delete(cr, "hostIds") }, []string{"Employee"}, false},
-		{"empty scope", func(cr map[string]any) { cr["hostIds"] = []string{} }, []string{"Admin"}, false},
+		{"empty scope", func(cr map[string]any) { cr["hostIds"] = []string{} }, []string{"admin"}, false},
 		{"out of scope", func(cr map[string]any) { cr["hostIds"] = []string{"host-2"} }, []string{"Employee"}, false},
 		{"expiry during assignment", nil, []string{"Employee"}, false},
 	}
