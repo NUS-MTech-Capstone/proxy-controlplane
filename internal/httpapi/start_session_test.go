@@ -26,6 +26,7 @@ func TestStartRejectsAgentConnectionTypeUntilStreamingTransportExists(t *testing
 	rec := httptest.NewRecorder()
 
 	server.ServeHTTP(rec, req)
+	assertContractResponse(t, req.Method, req.URL.String(), rec)
 
 	if rec.Code != http.StatusBadRequest {
 		t.Fatalf("status = %d, want %d, body=%s", rec.Code, http.StatusBadRequest, rec.Body.String())

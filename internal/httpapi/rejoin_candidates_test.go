@@ -72,6 +72,7 @@ func TestListRejoinCandidatesUsesCognitoUserAndSanitizesResponse(t *testing.T) {
 	rec := httptest.NewRecorder()
 
 	server.ServeHTTP(rec, req)
+	assertContractResponse(t, req.Method, req.URL.String(), rec)
 
 	if rec.Code != http.StatusOK {
 		t.Fatalf("status = %d, want %d, body=%s", rec.Code, http.StatusOK, rec.Body.String())
@@ -105,6 +106,7 @@ func TestListRejoinCandidatesRejectsMissingFilters(t *testing.T) {
 	rec := httptest.NewRecorder()
 
 	server.ServeHTTP(rec, req)
+	assertContractResponse(t, req.Method, req.URL.String(), rec)
 
 	if rec.Code != http.StatusBadRequest {
 		t.Fatalf("status = %d, want %d", rec.Code, http.StatusBadRequest)
@@ -133,6 +135,7 @@ func TestListRejoinCandidatesBlocksSTSDenial(t *testing.T) {
 	rec := httptest.NewRecorder()
 
 	server.ServeHTTP(rec, req)
+	assertContractResponse(t, req.Method, req.URL.String(), rec)
 
 	if rec.Code != http.StatusForbidden {
 		t.Fatalf("status = %d, want %d", rec.Code, http.StatusForbidden)

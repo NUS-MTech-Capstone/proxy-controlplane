@@ -85,6 +85,7 @@ func TestTrustedActorForwardingAndPolicyDenials(t *testing.T) {
 				req.Header.Set("x-amzn-oidc-identity", "user-1")
 				rec := httptest.NewRecorder()
 				server.ServeHTTP(rec, req)
+				assertContractResponse(t, req.Method, req.URL.String(), rec)
 				want := 200
 				if action == "start" {
 					want = 201
@@ -144,6 +145,7 @@ func TestPrivilegedCloseUsesVerifiedGroups(t *testing.T) {
 			req.Header.Set("x-amzn-oidc-accesstoken", unsignedJWT(t, map[string]any{"cognito:groups": []string{"Admin"}}))
 			rec := httptest.NewRecorder()
 			server.ServeHTTP(rec, req)
+			assertContractResponse(t, req.Method, req.URL.String(), rec)
 			if closed != tt.allowed {
 				t.Error("close used unverified groups")
 			}

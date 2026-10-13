@@ -2,142 +2,180 @@ openapi: 3.1.0
 info:
   title: DenDenMushi Proxy Control Plane API
   version: 0.1.0
-  description: "Public control API for starting, rejoining, and observing assigned SSH sessions. ALB identity and Cognito access tokens are cryptographically verified and subject-bound; current CR approval, time window, actor-group entitlement and explicit host scope are enforced by STS. Business endpoints require the `x-api-version: 1` header; probe and OpenAPI endpoints are exempt."
+  description: 'Public control API for starting, rejoining, and observing assigned SSH sessions. ALB identity and
+    Cognito access tokens are cryptographically verified and subject-bound; current CR approval, time window, actor-group
+    entitlement and explicit host scope are enforced by STS. Business endpoints require the `x-api-version: 1` header;
+    probe and OpenAPI endpoints are exempt.'
 servers:
-  - url: http://localhost:8081
+- url: https://api.ddm.keiyam.me
+  description: AWS dev public origin.
+- url: http://localhost:8080
+  description: Direct service address; public services are accessed through the authenticated ALB.
 paths:
   /healthz:
     get:
       summary: Liveness probe
       responses:
-        "200":
-          $ref: "#/components/responses/Health"
+        '200':
+          description: Successful response.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/HealthResponse'
+      security: []
   /sessions/start:
     post:
       summary: Start an SSH session
       security:
-        - albCognito: []
+      - albCognito: []
+        albSubject: []
+        cognitoAccess: []
       requestBody:
         required: true
         content:
           application/json:
             schema:
-              $ref: "#/components/schemas/StartSessionRequest"
+              $ref: '#/components/schemas/StartSessionRequest'
       responses:
-        "201":
+        '201':
           description: Session created and token issued.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/SessionResponse"
-        "400":
-          $ref: "#/components/responses/Error"
-        "403":
-          $ref: "#/components/responses/Error"
-        "401":
-          $ref: "#/components/responses/Error"
-        "502":
-          $ref: "#/components/responses/Error"
+                $ref: '#/components/schemas/SessionResponse'
+        '400':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '502':
+          $ref: '#/components/responses/Error'
+      parameters:
+      - $ref: '#/components/parameters/APIVersion'
   /sessions:
     get:
       summary: List active sessions for the authenticated web client
       security:
-        - albCognito: []
+      - albCognito: []
+        albSubject: []
+        cognitoAccess: []
       parameters:
-        - $ref: "#/components/parameters/HostIdOptional"
-        - $ref: "#/components/parameters/CrIdOptional"
-        - name: status
-          in: query
-          schema:
-            type: string
-            enum: [ACTIVE, CLOSED]
-            default: ACTIVE
-        - name: mine
-          in: query
-          schema:
-            type: boolean
-            default: false
+      - $ref: '#/components/parameters/HostIdOptional'
+      - $ref: '#/components/parameters/CrIdOptional'
+      - name: status
+        in: query
+        schema:
+          type: string
+          enum:
+          - ACTIVE
+          - CLOSED
+          default: ACTIVE
+      - name: mine
+        in: query
+        schema:
+          type: boolean
+          default: false
+      - $ref: '#/components/parameters/APIVersion'
       responses:
-        "200":
+        '200':
           description: Safe session metadata.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/ListSessionsResponse"
-        "403":
-          $ref: "#/components/responses/Error"
-        "401":
-          $ref: "#/components/responses/Error"
-        "502":
-          $ref: "#/components/responses/Error"
+                $ref: '#/components/schemas/ListSessionsResponse'
+        '403':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '502':
+          $ref: '#/components/responses/Error'
+        '400':
+          $ref: '#/components/responses/Error'
   /sessions/rejoin-candidates:
     get:
       summary: List active sessions the authenticated user can rejoin
       security:
-        - albCognito: []
+      - albCognito: []
+        albSubject: []
+        cognitoAccess: []
       parameters:
-        - $ref: "#/components/parameters/HostId"
-        - $ref: "#/components/parameters/CrId"
+      - $ref: '#/components/parameters/HostId'
+      - $ref: '#/components/parameters/CrId'
+      - $ref: '#/components/parameters/APIVersion'
       responses:
-        "200":
+        '200':
           description: Rejoin candidates.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/RejoinCandidatesResponse"
-        "400":
-          $ref: "#/components/responses/Error"
-        "403":
-          $ref: "#/components/responses/Error"
-        "401":
-          $ref: "#/components/responses/Error"
+                $ref: '#/components/schemas/RejoinCandidatesResponse'
+        '400':
+          $ref: '#/components/responses/Error'
+        '403':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
   /sessions/{sessionId}/rejoin:
     post:
       summary: Rejoin a session as the original owner
       security:
-        - albCognito: []
+      - albCognito: []
+        albSubject: []
+        cognitoAccess: []
       parameters:
-        - $ref: "#/components/parameters/SessionId"
+      - $ref: '#/components/parameters/SessionId'
+      - $ref: '#/components/parameters/APIVersion'
       responses:
-        "200":
+        '200':
           description: Fresh owner token and WebSocket URL.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/SessionResponse"
-        "403":
-          $ref: "#/components/responses/Error"
-        "401":
-          $ref: "#/components/responses/Error"
-        "502":
-          $ref: "#/components/responses/Error"
+                $ref: '#/components/schemas/SessionResponse'
+        '403':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '502':
+          $ref: '#/components/responses/Error'
+        '400':
+          $ref: '#/components/responses/Error'
   /sessions/{sessionId}/observe:
     post:
       summary: Observe a session read-only
       security:
-        - albCognito: []
+      - albCognito: []
+        albSubject: []
+        cognitoAccess: []
       parameters:
-        - $ref: "#/components/parameters/SessionId"
+      - $ref: '#/components/parameters/SessionId'
+      - $ref: '#/components/parameters/APIVersion'
       responses:
-        "200":
+        '200':
           description: Observer token and WebSocket URL.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/SessionResponse"
-        "403":
-          $ref: "#/components/responses/Error"
-        "401":
-          $ref: "#/components/responses/Error"
-        "502":
-          $ref: "#/components/responses/Error"
+                $ref: '#/components/schemas/SessionResponse'
+        '403':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '502':
+          $ref: '#/components/responses/Error'
+        '400':
+          $ref: '#/components/responses/Error'
   /sessions/{sessionId}/close:
     post:
       summary: Close an active SSH session
       security:
-        - albCognito: []
+      - albCognito: []
+        albSubject: []
+        cognitoAccess: []
       parameters:
-        - $ref: "#/components/parameters/SessionId"
+      - $ref: '#/components/parameters/SessionId'
+      - $ref: '#/components/parameters/APIVersion'
       requestBody:
         required: false
         content:
@@ -146,24 +184,48 @@ paths:
               type: object
               additionalProperties: false
       responses:
-        "200":
+        '200':
           description: Session closed.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/SessionCandidate"
-        "403":
-          $ref: "#/components/responses/Error"
-        "401":
-          $ref: "#/components/responses/Error"
-        "502":
-          $ref: "#/components/responses/Error"
+                $ref: '#/components/schemas/SessionCandidate'
+        '403':
+          $ref: '#/components/responses/Error'
+        '401':
+          $ref: '#/components/responses/Error'
+        '502':
+          $ref: '#/components/responses/Error'
+        '400':
+          $ref: '#/components/responses/Error'
+  /openapi.yaml:
+    get:
+      summary: Checked-in OpenAPI specification
+      responses:
+        '200':
+          description: Exact api/openapi.yaml bytes.
+          content:
+            application/yaml:
+              schema:
+                type: string
+      security: []
 components:
   securitySchemes:
     albCognito:
       type: apiKey
       in: header
       name: x-amzn-oidc-data
+    albSubject:
+      type: apiKey
+      in: header
+      name: x-amzn-oidc-identity
+      description: ALB-injected subject; must match both verified signed identities.
+    cognitoAccess:
+      type: apiKey
+      in: header
+      name: x-amzn-oidc-accesstoken
+      description: ALB-injected Cognito access JWT; verified issuer, client, token use, signature and subject. Browser
+        callers use the ALB session cookie.
   parameters:
     SessionId:
       name: sessionId
@@ -195,40 +257,53 @@ components:
       required: false
       schema:
         type: string
+    APIVersion:
+      name: x-api-version
+      in: header
+      required: true
+      schema:
+        type: string
+        enum:
+        - '1'
+      description: Required on business endpoints. Missing or unsupported values return 400.
   responses:
     Health:
       description: Service is running.
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/HealthResponse"
+            $ref: '#/components/schemas/HealthResponse'
     Error:
-      description: Structured error response.
+      description: Invalid request, authorization denial, or service failure; the HTTP status identifies the category.
       content:
         application/json:
           schema:
-            $ref: "#/components/schemas/ErrorResponse"
+            $ref: '#/components/schemas/ErrorResponse'
   schemas:
     HealthResponse:
       type: object
-      required: [status]
       properties:
         status:
           type: string
-          example: ok
+      required:
+      - status
     ErrorResponse:
       type: object
-      required: [error]
       properties:
         error:
           type: object
-          required: [message]
           properties:
             message:
               type: string
+          required:
+          - message
+      required:
+      - error
     StartSessionRequest:
       type: object
-      required: [hostId, crId]
+      required:
+      - hostId
+      - crId
       properties:
         hostId:
           type: string
@@ -236,11 +311,16 @@ components:
           type: string
         connectionType:
           type: string
-          enum: [ssh]
+          enum:
+          - ssh
           default: ssh
     SessionResponse:
       type: object
-      required: [sessionId, sessionToken, websocketUrl, expiresAt]
+      required:
+      - sessionId
+      - sessionToken
+      - websocketUrl
+      - expiresAt
       properties:
         sessionId:
           type: string
@@ -253,7 +333,16 @@ components:
           format: date-time
     SessionCandidate:
       type: object
-      required: [sessionId, userId, hostId, crId, connectionType, status, createdAt, lastHeartbeatAt, leaseExpiresAt]
+      required:
+      - sessionId
+      - userId
+      - hostId
+      - crId
+      - connectionType
+      - status
+      - createdAt
+      - lastHeartbeatAt
+      - leaseExpiresAt
       properties:
         sessionId:
           type: string
@@ -278,17 +367,19 @@ components:
           format: date-time
     RejoinCandidatesResponse:
       type: object
-      required: [sessions]
+      required:
+      - sessions
       properties:
         sessions:
           type: array
           items:
-            $ref: "#/components/schemas/SessionCandidate"
+            $ref: '#/components/schemas/SessionCandidate'
     ListSessionsResponse:
       type: object
-      required: [sessions]
+      required:
+      - sessions
       properties:
         sessions:
           type: array
           items:
-            $ref: "#/components/schemas/SessionCandidate"
+            $ref: '#/components/schemas/SessionCandidate'
