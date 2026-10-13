@@ -28,6 +28,8 @@ paths:
       summary: Start an SSH session
       security:
       - albCognito: []
+        albSubject: []
+        cognitoAccess: []
       requestBody:
         required: true
         content:
@@ -56,6 +58,8 @@ paths:
       summary: List active sessions for the authenticated web client
       security:
       - albCognito: []
+        albSubject: []
+        cognitoAccess: []
       parameters:
       - $ref: '#/components/parameters/HostIdOptional'
       - $ref: '#/components/parameters/CrIdOptional'
@@ -93,6 +97,8 @@ paths:
       summary: List active sessions the authenticated user can rejoin
       security:
       - albCognito: []
+        albSubject: []
+        cognitoAccess: []
       parameters:
       - $ref: '#/components/parameters/HostId'
       - $ref: '#/components/parameters/CrId'
@@ -115,6 +121,8 @@ paths:
       summary: Rejoin a session as the original owner
       security:
       - albCognito: []
+        albSubject: []
+        cognitoAccess: []
       parameters:
       - $ref: '#/components/parameters/SessionId'
       - $ref: '#/components/parameters/APIVersion'
@@ -138,6 +146,8 @@ paths:
       summary: Observe a session read-only
       security:
       - albCognito: []
+        albSubject: []
+        cognitoAccess: []
       parameters:
       - $ref: '#/components/parameters/SessionId'
       - $ref: '#/components/parameters/APIVersion'
@@ -161,6 +171,8 @@ paths:
       summary: Close an active SSH session
       security:
       - albCognito: []
+        albSubject: []
+        cognitoAccess: []
       parameters:
       - $ref: '#/components/parameters/SessionId'
       - $ref: '#/components/parameters/APIVersion'
@@ -203,6 +215,17 @@ components:
       type: apiKey
       in: header
       name: x-amzn-oidc-data
+    albSubject:
+      type: apiKey
+      in: header
+      name: x-amzn-oidc-identity
+      description: ALB-injected subject; must match both verified signed identities.
+    cognitoAccess:
+      type: apiKey
+      in: header
+      name: x-amzn-oidc-accesstoken
+      description: ALB-injected Cognito access JWT; verified issuer, client, token use, signature and subject. Browser
+        callers use the ALB session cookie.
   parameters:
     SessionId:
       name: sessionId
