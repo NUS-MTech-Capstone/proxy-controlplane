@@ -44,6 +44,7 @@ func TestSessionActionRejoinAndObserve(t *testing.T) {
 		req.Header.Set("x-amzn-oidc-data", "signed-token")
 		req.Header.Set("x-amzn-oidc-identity", "user-1")
 		server.ServeHTTP(rec, req)
+		assertContractResponse(t, req.Method, req.URL.String(), rec)
 		if rec.Code != http.StatusOK {
 			t.Fatalf("%s status = %d, want %d body=%s", path, rec.Code, http.StatusOK, rec.Body.String())
 		}
@@ -60,6 +61,7 @@ func TestSessionActionValidationErrors(t *testing.T) {
 	req.Header.Set("x-amzn-oidc-identity", "user-1")
 	rec := httptest.NewRecorder()
 	server.ServeHTTP(rec, req)
+	assertContractResponse(t, req.Method, req.URL.String(), rec)
 	if rec.Code != http.StatusNotFound {
 		t.Fatalf("status = %d, want %d", rec.Code, http.StatusNotFound)
 	}
@@ -70,6 +72,7 @@ func TestSessionActionValidationErrors(t *testing.T) {
 	req.Header.Set("x-amzn-oidc-identity", "user-1")
 	rec = httptest.NewRecorder()
 	server.ServeHTTP(rec, req)
+	assertContractResponse(t, req.Method, req.URL.String(), rec)
 	if rec.Code != http.StatusBadRequest {
 		t.Fatalf("bad json status = %d, want %d", rec.Code, http.StatusBadRequest)
 	}

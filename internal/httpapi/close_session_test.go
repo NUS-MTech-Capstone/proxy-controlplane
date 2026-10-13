@@ -55,6 +55,7 @@ func TestCloseSessionAllowsOwner(t *testing.T) {
 	rec := httptest.NewRecorder()
 
 	server.ServeHTTP(rec, req)
+	assertContractResponse(t, req.Method, req.URL.String(), rec)
 
 	if rec.Code != http.StatusOK {
 		t.Fatalf("status = %d, want %d, body=%s", rec.Code, http.StatusOK, rec.Body.String())
@@ -101,6 +102,7 @@ func TestCloseSessionRejectsNonOwnerWithoutPrivilegedRole(t *testing.T) {
 	rec := httptest.NewRecorder()
 
 	server.ServeHTTP(rec, req)
+	assertContractResponse(t, req.Method, req.URL.String(), rec)
 
 	if rec.Code != http.StatusBadGateway {
 		t.Fatalf("status = %d, want %d, body=%s", rec.Code, http.StatusBadGateway, rec.Body.String())
