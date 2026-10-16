@@ -4,9 +4,9 @@ Public control API for starting, rejoining, and observing sessions.
 
 ## Overview
 
-The Proxy Control Plane validates incoming requests with the Security Token Service (STS), 
-creates sessions in the Session Manager, 
-and returns the WebSocket URL for the Proxy Data Plane to connect to.
+The Proxy Control Plane validates incoming requests with the Security Token Service (STS),
+creates sessions in the Session Manager,
+and returns the assigned Proxy Dataplane WebSocket URL for the browser.
 
 Session endpoints expect AWS ALB Cognito authentication. The control plane
 cryptographically verifies the ES256 `x-amzn-oidc-data` JWT against the AWS
@@ -90,8 +90,7 @@ Start request body:
 }
 ```
 
-`connectionType` defaults to `ssh`. `agent` is reserved but rejected until the
-streaming DDM Agent transport is implemented.
+`connectionType` is `ssh`, which is also the default.
 
 Rejoin and observe requests use an empty JSON object:
 
@@ -119,15 +118,6 @@ For webapp session tables, call `GET /sessions`. Optional filters are `hostId`,
 only and never includes session tokens, WebSocket URLs, or dataplane ownership
 fields. Token issuance still happens only through start, rejoin, and observe.
 
-## API Specification
-
-The OpenAPI contract is checked in at `api/openapi.yaml` and is served
-unauthenticated at:
-
-```http
-GET /openapi.yaml
-```
-
 Business endpoints require `x-api-version: 1`. `GET /healthz` and
 `GET /openapi.yaml` are exempt so probes and spec reads do not need custom
 headers.
@@ -139,7 +129,7 @@ framing, and apply `Referrer-Policy: no-referrer`. The service does not emit
 CORS allow headers: browser access is intentionally same-origin through the
 public ALB.
 
-## Change-request policy and rollout
+## Change-request policy
 
 Start, rejoin, observe, and rejoin discovery require STS to approve the current
 CR window, explicit host scope, and actor-group entitlement. `Admin` bypasses
@@ -157,10 +147,6 @@ Cognito role mapping: `admin` has the same role as `Admin`, and
 `securityanalyst` as `SecurityAnalyst`. Browser-supplied roles remain ignored;
 whitespace-padded groups are invalid, and host/CR identifiers retain exact matching.
 
-Deploy Nest Backend first, this service second, and enforcing STS last. No new
-Cognito configuration or database migration is needed. Existing attachments,
-token TTLs, and direct browser-to-dataplane traffic retain their behavior.
-
 Cross-repository verification, from this repository:
 
 ```bash
@@ -175,17 +161,12 @@ fixtures, a Nest-tested wire-contract fixture, and controlled Session Manager
 responses. It covers valid access, expired/future CRs, actor denials, missing or
 empty scope, out-of-scope hosts, and assignment cleanup after expiry.
 
-## API contract verification
+## API contract and CI
 
-`api/openapi.yaml` is the checked-in HTTP contract, served byte-for-byte at
-`GET /openapi.yaml`. CI validates it with `openapi-spec-validator==0.9.0`.
-Handler tests validate representative success and error responses against its
-schemas, including missing and unsupported API versions. Business HTTP calls
-require `x-api-version: 1`; the specification declares route exemptions and
-any transport-specific alternatives. Run the repository test suite when
-changing handlers or response models, and update the contract in the same PR.
+[OpenAPI contract](api/openapi.yaml), served byte-for-byte at `GET /openapi.yaml`.
+CI validates it with `openapi-spec-validator==0.9.0`; handler tests check success,
+error and API-version responses. Update the specification alongside handler changes.
 
-The Image workflow runs only after successful CI for a push to `main`. It builds
-the tested source SHA, retains that SHA as a traceability tag, and promotes the
-build's `sha256` digest through a Kubernetes PR. Promotion requires the digest;
-Argo CD deploys that immutable reference after the GitOps PR is merged.
+After successful `main` CI, the Image workflow builds the tested source SHA
+and opens a Kubernetes promotion PR with its immutable image digest. Argo CD
+deploys after that PR is merged; the commit tag provides source traceability.
